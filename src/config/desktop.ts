@@ -10,20 +10,33 @@ export const desktopConfig = {
 
   menuBar: {
     name: 'Usha',
-    // Dropdown under "Usha" (placeholder links)
+    // Dropdown under "Usha". `window` opens that app's window (see src/config/apps.ts);
+    // `href` is the fallback URL and the target for external links.
     profileLinks: [
-      { label: 'Résumé', href: '#', external: false },
+      { label: 'Resume', href: '/resume', window: 'preview' },
       { label: 'GitHub', href: '#', external: true },
       { label: 'LinkedIn', href: '#', external: true },
-      { label: 'Contact', href: '#', external: false },
+      { label: 'Contact', href: '/contact', window: 'mail' },
     ],
-    // Plain links next to "Usha" (hidden on mobile); will open windows later
+    // Plain items next to "Usha" (hidden on mobile)
     items: [
-      { label: 'Projects', href: '#' },
-      { label: 'About', href: '#' },
-      { label: 'Experience', href: '#' },
+      { label: 'Projects', href: '/projects', window: 'finder' },
+      { label: 'About', href: '/about', window: 'notes' },
+      { label: 'Experience', href: '/resume', window: 'preview' },
     ],
   },
+
+  folders: {
+    label: 'Project folders',
+    // Screen-reader hint for desktop folders
+    hint: 'Press Enter or double-click to open.',
+  },
+
+  // Phone home-screen app grid (screen-reader label)
+  homeScreenLabel: 'Apps',
+
+  // Dock (screen-reader label)
+  dockLabel: 'Dock',
 
   clock: {
     timeZone: 'America/Toronto',

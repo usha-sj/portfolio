@@ -1,0 +1,191 @@
+---
+// Window chrome, rendered once as a <template>. The window manager (src/scripts/windows.ts)
+// clones it for every window and drops the app's content into [data-window-body].
+import { windowText } from '../../config/apps';
+---
+
+<template id="window-chrome">
+  <section class="window" role="dialog" aria-modal="false" tabindex="-1" data-window data-anim="window">
+    <header class="window__titlebar" data-window-drag>
+      <div class="window__controls">
+        <button type="button" class="window__btn window__btn--close" data-window-action="close" aria-label="Close window">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5" /></svg>
+        </button>
+        <button type="button" class="window__btn window__btn--minimize" data-window-action="minimize" aria-label="Minimise window">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5h6" /></svg>
+        </button>
+        <button type="button" class="window__btn window__btn--maximize" data-window-action="maximize" aria-label="Maximise window">
+          <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2v6M2 5h6" /></svg>
+        </button>
+      </div>
+      <button type="button" class="window__back" data-window-action="close">{windowText.mobileBack}</button>
+      <h2 class="window__title" data-window-title></h2>
+    </header>
+    <div class="window__body" data-window-body></div>
+  </section>
+</template>
+
+<style>
+  .window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    width: min(var(--w, var(--window-w)), 100% - 2 * var(--window-margin));
+    height: min(var(--h, var(--window-h)), 100% - var(--dock-h) - 2 * var(--window-margin));
+    background: var(--color-window-bg);
+    border: var(--border-thin) solid var(--color-window-border);
+    border-radius: var(--radius-window);
+    box-shadow: var(--shadow-window-inactive);
+    overflow: hidden;
+    pointer-events: auto;
+    color: var(--color-text);
+  }
+
+  .window:focus {
+    outline: none;
+  }
+
+  .window[data-size='small'] { --w: var(--window-w-small); --h: var(--window-h-small); }
+  .window[data-size='large'] { --w: var(--window-w-large); --h: var(--window-h-large); }
+
+  .window.is-focused {
+    box-shadow: var(--shadow-window);
+  }
+
+  .window.is-minimized {
+    display: none;
+  }
+
+  /* Green button: fill the screen between the menu bar and the dock */
+  .window.is-maximized {
+    inset: var(--window-margin) var(--window-margin) calc(var(--dock-h) + var(--window-margin)) !important;
+    width: auto;
+    height: auto;
+  }
+
+  /* ---- Title bar ---- */
+  .window__titlebar {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--window-titlebar-h);
+    padding: 0 var(--space-3);
+    background: var(--color-window-titlebar);
+    border-bottom: var(--border-thin) solid var(--color-window-titlebar-border);
+    font-family: var(--font-system);
+    cursor: default;
+    user-select: none;
+    touch-action: none; /* lets pointer events drive dragging on touch screens */
+  }
+
+  .window__title {
+    margin: 0;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-window-title);
+    font-weight: 600;
+    color: var(--color-window-title-inactive);
+  }
+
+  .window.is-focused .window__title {
+    color: var(--color-window-title);
+  }
+
+  /* ---- Traffic lights ---- */
+  .window__controls {
+    position: absolute;
+    left: var(--space-3);
+    display: flex;
+    gap: var(--traffic-gap);
+  }
+
+  .window__btn {
+    display: grid;
+    place-items: center;
+    width: var(--traffic-size);
+    height: var(--traffic-size);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--color-traffic-inactive);
+    cursor: pointer;
+  }
+
+  .window.is-focused .window__btn--close,
+  .window__controls:hover .window__btn--close { background: var(--color-traffic-close); }
+  .window.is-focused .window__btn--minimize,
+  .window__controls:hover .window__btn--minimize { background: var(--color-traffic-minimize); }
+  .window.is-focused .window__btn--maximize,
+  .window__controls:hover .window__btn--maximize { background: var(--color-traffic-maximize); }
+
+  .window__btn svg {
+    width: 70%;
+    height: 70%;
+    fill: none;
+    stroke: var(--color-traffic-glyph);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    visibility: hidden;
+  }
+
+  /* Glyphs appear when hovering (or keyboard-focusing) the group, like macOS */
+  .window__controls:hover svg,
+  .window__controls:focus-within svg {
+    visibility: visible;
+  }
+
+  .window__back {
+    display: none;
+  }
+
+  /* ---- Body ---- */
+  .window__body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    font-family: var(--font-body);
+  }
+
+  /* ---- Phone: full-screen app view with a Back button ---- */
+  @media (max-width: 767px) {
+    /* The home screen behind a full-screen app shouldn't scroll */
+    :global(html.has-open-window) {
+      overflow: hidden;
+    }
+
+    .window,
+    .window.is-maximized {
+      position: fixed;
+      inset: var(--menubar-h) 0 0 !important;
+      width: auto;
+      height: auto;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .window__titlebar {
+      height: calc(var(--window-titlebar-h) + var(--space-3));
+    }
+
+    .window__controls {
+      display: none;
+    }
+
+    .window__back {
+      position: absolute;
+      left: var(--space-2);
+      display: block;
+      padding: var(--space-1) var(--space-2);
+      border: 0;
+      background: none;
+      font: inherit;
+      font-size: var(--text-base);
+      color: var(--color-focus);
+      cursor: pointer;
+    }
+  }
+</style>

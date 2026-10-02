@@ -1,0 +1,134 @@
+---
+// Dock/home icons: original SVGs styled after macOS (same ideas, not Apple's artwork).
+// To use your own image instead, set `icon` for that app in src/config/apps.ts.
+// Colours: --color-icon-* in tokens.css.
+import { apps, type AppId } from '../../config/apps';
+
+interface Props {
+  app: AppId;
+  class?: string;
+}
+
+const { app, class: className } = Astro.props;
+const custom = (apps[app] as { icon?: string }).icon;
+---
+
+<span class:list={['app-icon', `app-icon--${app}`, className]} aria-hidden="true">
+  {
+    custom ? (
+      <img src={custom} alt="" />
+    ) : (
+      <svg viewBox="0 0 100 100">
+        {app === 'finder' && (
+          <>
+            {/* two-tone tile with a white folder */}
+            <rect class="fi-left" width="100" height="100" />
+            <path class="fi-right" d="M54 0h46v100H46z" />
+            <path class="fi-fg" d="M26 36a4 4 0 0 1 4-4h13l5 5h22a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H30a4 4 0 0 1-4-4z" />
+          </>
+        )}
+        {app === 'notes' && (
+          <>
+            {/* notepad: yellow strip, ruled lines */}
+            <rect class="no-paper" width="100" height="100" />
+            <rect class="no-band" width="100" height="27" />
+            <path class="no-lines" d="M14 46h72M14 60h72M14 74h72M14 88h72" />
+          </>
+        )}
+        {app === 'preview' && (
+          <>
+            {/* a snapshot with a magnifier over it */}
+            <rect class="pr-bg" width="100" height="100" />
+            <g transform="rotate(-6 46 46)">
+              <rect class="pr-frame" x="16" y="20" width="56" height="48" rx="3" />
+              <rect class="pr-sky" x="20" y="24" width="48" height="40" />
+              <path class="pr-hill" d="M20 64V50c10-8 18-8 26-2s14 6 22-2v18z" />
+            </g>
+            <circle class="pr-lens" cx="66" cy="66" r="13" />
+            <path class="pr-handle" d="M75.5 75.5 86 86" />
+          </>
+        )}
+        {app === 'mail' && (
+          <>
+            {/* white envelope on blue */}
+            <rect class="ma-bg" width="100" height="100" />
+            <rect class="ma-fg" x="20" y="30" width="60" height="40" rx="4" />
+            <path class="ma-flap" d="m22 33 28 20 28-20" />
+          </>
+        )}
+        {app === 'terminal' && (
+          <>
+            {/* dark screen inside a bezel, with a prompt */}
+            <rect class="te-bezel" width="100" height="100" />
+            <rect class="te-screen" x="10" y="14" width="80" height="72" rx="8" />
+            <path class="te-fg" d="m24 36 12 10-12 10M42 60h16" />
+          </>
+        )}
+        {app === 'trash' && (
+          <>
+            {/* ribbed wire bin, no tile (like the real dock) */}
+            <path class="tr-body" d="M22 24h56l-6 66a5 5 0 0 1-5 4H33a5 5 0 0 1-5-4z" />
+            <path class="tr-rib" d="M36 30l2 58M50 30v58M64 30l-2 58M27 46h46M28 64h44" />
+            <rect class="tr-lid" x="18" y="16" width="64" height="10" rx="5" />
+          </>
+        )}
+      </svg>
+    )
+  }
+</span>
+
+<style>
+  .app-icon {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius-icon);
+    box-shadow: var(--shadow-icon);
+  }
+
+  .app-icon svg,
+  .app-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Trash has no tile, so its shadow follows the bin's outline */
+  .app-icon--trash {
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .app-icon--trash svg {
+    filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.18));
+  }
+
+  .fi-left { fill: var(--color-icon-finder-left); }
+  .fi-right { fill: var(--color-icon-finder-right); }
+  .fi-fg { fill: var(--color-icon-finder-fg); }
+
+  .no-paper { fill: var(--color-icon-notes-paper); }
+  .no-band { fill: var(--color-icon-notes-band); }
+  .no-lines { stroke: var(--color-icon-notes-lines); stroke-width: 2.5; stroke-dasharray: 2 4; }
+
+  .pr-bg { fill: var(--color-icon-preview-bg); }
+  .pr-frame { fill: var(--color-icon-preview-frame); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.2)); }
+  .pr-sky { fill: var(--color-icon-preview-sky); }
+  .pr-hill { fill: var(--color-icon-preview-hill); }
+  .pr-lens { fill: rgb(255 255 255 / 0.35); stroke: var(--color-icon-preview-lens); stroke-width: 5; }
+  .pr-handle { stroke: var(--color-icon-preview-lens); stroke-width: 8; stroke-linecap: round; }
+
+  .ma-bg { fill: var(--color-icon-mail-bg); }
+  .ma-fg { fill: var(--color-icon-mail-fg); }
+  .ma-flap { fill: none; stroke: var(--color-icon-mail-bg); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+
+  .te-bezel { fill: var(--color-icon-terminal-bezel); }
+  .te-screen { fill: var(--color-icon-terminal-screen); }
+  .te-fg { fill: none; stroke: var(--color-icon-terminal-fg); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .tr-body { fill: var(--color-icon-trash-body); }
+  .tr-rib { fill: none; stroke: var(--color-icon-trash-rib); stroke-width: 2; }
+  .tr-lid { fill: var(--color-icon-trash-lid); }
+</style>

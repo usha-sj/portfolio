@@ -1,0 +1,125 @@
+---
+// One folder per featured project, in the right-hand column.
+// Click selects, double-click or Enter opens (like Finder).
+import { getCollection } from 'astro:content';
+import { desktopConfig } from '../../config/desktop';
+import FolderIcon from '../icons/FolderIcon.astro';
+
+const featured = (await getCollection('projects', (p) => p.data.featured)).sort((a, b) => a.data.order - b.data.order);
+---
+
+<ul class="folders" aria-label={desktopConfig.folders.label}>
+  {
+    featured.map((p) => (
+      <li>
+        <button type="button" class="folder" data-folder data-folder-window={`project/${p.id}`} aria-describedby="folders-hint">
+          <span class="folder__icon">
+            <FolderIcon />
+          </span>
+          <span class="folder__label">{p.data.title}</span>
+        </button>
+      </li>
+    ))
+  }
+</ul>
+<p id="folders-hint" class="visually-hidden">{desktopConfig.folders.hint}</p>
+
+<style>
+  .folders {
+    position: fixed;
+    top: calc(var(--menubar-h) + var(--desktop-pad));
+    right: var(--desktop-pad);
+    z-index: var(--z-folders);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    width: var(--folder-col-w);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .folder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    width: var(--folder-label-w);
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: var(--font-system);
+    font-size: var(--text-xs);
+    color: var(--color-folder-label);
+    cursor: default;
+  }
+
+  .folder__icon {
+    width: calc(var(--folder-icon-size) + var(--space-2));
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+  }
+
+  .folder__label {
+    max-width: 100%;
+    padding: 1px var(--space-1);
+    border-radius: var(--radius-sm);
+    background: var(--color-folder-label-bg);
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  .folder[data-selected] .folder__icon {
+    background: var(--color-selection);
+  }
+
+  .folder[data-selected] .folder__label {
+    background: var(--color-folder-label-selected-bg);
+    color: var(--color-folder-label-selected-text);
+  }
+
+  .folder:focus-visible {
+    outline: none;
+  }
+
+  .folder:focus-visible .folder__icon {
+    outline: 2px solid var(--color-focus);
+  }
+
+  @media (max-width: 767px) {
+    .folders {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const folders = [...document.querySelectorAll<HTMLButtonElement>('[data-folder]')];
+
+  const select = (folder: HTMLButtonElement | null) =>
+    folders.forEach((f) => f.toggleAttribute('data-selected', f === folder));
+
+  const open = (folder: HTMLButtonElement) =>
+    document.dispatchEvent(
+      new CustomEvent('window:request', { detail: { id: folder.dataset.folderWindow, opener: folder } }),
+    );
+
+  folders.forEach((folder) => {
+    folder.addEventListener('click', () => select(folder));
+    folder.addEventListener('dblclick', () => open(folder));
+    folder.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        select(folder);
+        open(folder);
+      }
+    });
+    folder.addEventListener('focus', () => select(folder));
+  });
+
+  // Clicking anywhere else clears the selection
+  document.addEventListener('pointerdown', (e) => {
+    if (!(e.target as HTMLElement).closest('[data-folder]')) select(null);
+  });
+</script>

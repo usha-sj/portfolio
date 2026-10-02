@@ -1,0 +1,95 @@
+---
+// Phone only: iOS-style app grid below the widgets. Project folders plus the apps
+// that don't fit in the 4-icon dock row. Tap opens (no double-tap on phones).
+import { getCollection } from 'astro:content';
+import { apps, dockApps, mobileDockApps } from '../../config/apps';
+import { desktopConfig } from '../../config/desktop';
+import AppIcon from '../icons/AppIcon.astro';
+import FolderIcon from '../icons/FolderIcon.astro';
+
+const featured = (await getCollection('projects', (p) => p.data.featured)).sort((a, b) => a.data.order - b.data.order);
+const extraApps = [...dockApps, 'trash' as const].filter((id) => !mobileDockApps.includes(id)).map((id) => apps[id]);
+---
+
+<ul class="home" aria-label={desktopConfig.homeScreenLabel}>
+  {
+    featured.map((p) => (
+      <li>
+        <button type="button" class="home__app" data-open-window={`project/${p.id}`}>
+          <span class="home__tile">
+            <FolderIcon />
+          </span>
+          <span class="home__label">{p.data.title}</span>
+        </button>
+      </li>
+    ))
+  }
+  {
+    extraApps.map((app) => (
+      <li>
+        <button type="button" class="home__app" data-open-window={app.id}>
+          <AppIcon app={app.id} />
+          <span class="home__label">{app.label}</span>
+        </button>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .home {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .home {
+      position: relative;
+      z-index: var(--z-widgets);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-5) var(--space-2);
+      margin: 0;
+      padding: 0 var(--mobile-gutter) calc(var(--dock-h) + var(--space-8));
+      list-style: none;
+    }
+
+    .home__app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
+      font-family: var(--font-system);
+      font-size: var(--text-xs);
+      color: var(--color-text);
+      cursor: pointer;
+    }
+
+    .home__app > :global(.app-icon),
+    .home__tile {
+      width: var(--home-icon-size);
+    }
+
+    /* Folder sits on a squircle tile so it matches the app icons */
+    .home__tile {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      padding: var(--space-2);
+      border-radius: var(--radius-icon);
+      background: var(--color-home-folder-tile);
+      border: var(--border-thin) solid var(--color-icon-border);
+      box-shadow: var(--shadow-icon);
+    }
+
+    .home__label {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+</style>

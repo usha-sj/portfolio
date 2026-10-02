@@ -1,0 +1,18 @@
+---
+// /about, /resume, /contact, /projects, /terminal, /trash:
+// the desktop with that app's window already open (loader skipped).
+import Base from '../layouts/Base.astro';
+import Desktop from '../components/desktop/Desktop.astro';
+import { apps, type AppDef } from '../config/apps';
+import { siteConfig } from '../config/site';
+
+export function getStaticPaths() {
+  return Object.values(apps).map((app) => ({ params: { app: app.path.slice(1) }, props: { app } }));
+}
+
+const { app } = Astro.props as { app: AppDef };
+---
+
+<Base title={`${app.title} · ${siteConfig.title}`} skipLoader>
+  <Desktop initialWindow={app.id} />
+</Base>

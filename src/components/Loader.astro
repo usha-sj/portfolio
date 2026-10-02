@@ -11,15 +11,22 @@ const bar = (percent: number) => {
 };
 
 const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionLabels)[];
+
+interface Props {
+  /** Direct links (/about, /projects/foo...) skip the loader and count as this session's visit */
+  skip?: boolean;
+}
+const { skip = false } = Astro.props;
 ---
 
 <!--
   Runs before the overlay is parsed so there's no flash: only shows the loader
   if it hasn't run this session. With JS off, the overlay never appears.
 -->
-<script is:inline define:vars={{ key: cfg.storageKey }}>
+<script is:inline define:vars={{ key: cfg.storageKey, skip }}>
   try {
-    if (!sessionStorage.getItem(key)) document.documentElement.classList.add('loader-active');
+    if (skip) sessionStorage.setItem(key, '1');
+    else if (!sessionStorage.getItem(key)) document.documentElement.classList.add('loader-active');
   } catch (e) {}
 </script>
 

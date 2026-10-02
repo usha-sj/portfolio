@@ -26,7 +26,8 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
                 role="menuitem"
                 tabindex="-1"
                 href={link.href}
-                {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                data-open-window={'window' in link ? link.window : undefined}
+                {...('external' in link && link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               >
                 {link.label}
               </a>
@@ -36,11 +37,14 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
       </ul>
     </div>
 
+    <!-- Focused window's app name, like macOS. Set by src/scripts/windows.ts -->
+    <span class="menubar__app" data-menubar-app hidden></span>
+
     <ul class="menubar__items">
       {
         items.map((item) => (
           <li>
-            <a class="menubar__item" href={item.href}>
+            <a class="menubar__item" href={item.href} data-open-window={item.window}>
               {item.label}
             </a>
           </li>
@@ -81,6 +85,7 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
     -webkit-backdrop-filter: var(--menubar-blur);
     backdrop-filter: var(--menubar-blur);
     border-bottom: var(--border-thin) solid var(--color-menubar-border);
+    font-family: var(--font-system);
     font-size: var(--text-menubar);
     font-weight: 500;
     color: var(--color-text);
@@ -117,8 +122,17 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
     color: var(--color-menu-hover-text);
   }
 
-  .menubar__name {
+  .menubar__name,
+  .menubar__app {
     font-weight: 700;
+  }
+
+  .menubar__app {
+    padding: 2px var(--space-2);
+  }
+
+  .menubar__app[hidden] {
+    display: none;
   }
 
   .menu {

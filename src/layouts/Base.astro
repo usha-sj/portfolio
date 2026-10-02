@@ -5,9 +5,10 @@ import { siteConfig } from '../config/site';
 
 interface Props {
   title?: string;
+  skipLoader?: boolean;
 }
 
-const { title = siteConfig.title } = Astro.props;
+const { title = siteConfig.title, skipLoader = false } = Astro.props;
 ---
 
 <html lang="en">
@@ -29,7 +30,7 @@ const { title = siteConfig.title } = Astro.props;
     />
   </head>
   <body>
-    <Loader />
+    <Loader skip={skipLoader} />
     <slot />
   </body>
 </html>

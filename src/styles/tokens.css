@@ -62,11 +62,72 @@
   --color-term-border: var(--ink-500);
   --color-term-bar-empty: var(--neutral-600);
 
+  /* ---- Windows (macOS-like chrome) ---- */
+  --color-window-bg: var(--white);
+  --color-window-border: rgb(29 27 24 / 0.14);
+  --color-window-titlebar: var(--oat-50);
+  --color-window-titlebar-border: rgb(29 27 24 / 0.08);
+  --color-window-title: var(--neutral-900);
+  --color-window-title-inactive: var(--neutral-400);
+  --color-traffic-close: #ec6a5e;
+  --color-traffic-minimize: #f4bf4f;
+  --color-traffic-maximize: #61c554;
+  --color-traffic-inactive: var(--oat-300);
+  --color-traffic-glyph: rgb(0 0 0 / 0.55);
+  --color-finder-sidebar: var(--oat-100);
+  --color-finder-selected: rgb(47 65 102 / 0.14);
+  --color-selection: rgb(47 65 102 / 0.18); /* selected folder highlight */
+
+  /* ---- Dock (translucent like the menu bar) ---- */
+  --color-dock-bg: rgb(250 246 238 / 0.45);
+  --color-dock-border: rgb(255 255 255 / 0.45);
+  --dock-blur: var(--menubar-blur);
+  --color-dock-dot: var(--neutral-900);
+  --color-dock-separator: rgb(29 27 24 / 0.18);
+  --color-tooltip-bg: rgb(250 246 238 / 0.92);
+  --color-tooltip-text: var(--neutral-900);
+  --color-tooltip-border: rgb(29 27 24 / 0.12);
+
+  /* ---- App icons: original designs in macOS colours (outside the site palette on purpose) ---- */
+  --color-icon-finder-left: #1e7cf2;
+  --color-icon-finder-right: #8ccaf7;
+  --color-icon-finder-fg: #ffffff;
+  --color-icon-notes-paper: #fdfcf7;
+  --color-icon-notes-band: #f8c934;
+  --color-icon-notes-lines: #d9d4c7;
+  --color-icon-preview-bg: #f3f4f6;
+  --color-icon-preview-sky: #7cc4f5;
+  --color-icon-preview-hill: #5fb35a;
+  --color-icon-preview-frame: #ffffff;
+  --color-icon-preview-lens: #6b7280;
+  --color-icon-mail-bg: #2a8bf2;
+  --color-icon-mail-fg: #ffffff;
+  --color-icon-terminal-bezel: #4a4a4c;
+  --color-icon-terminal-screen: #1c1c1e;
+  --color-icon-terminal-fg: #f2f2f2;
+  --color-icon-trash-body: #d4d6da;
+  --color-icon-trash-rib: #9aa0a8;
+  --color-icon-trash-lid: #bfc3c9;
+  --color-home-folder-tile: var(--oat-200); /* phone home-screen tile behind project folders */
+  --color-icon-border: rgb(29 27 24 / 0.1);
+
+  /* Desktop folders (scrapbook kraft folder) */
+  --color-folder-back: #c9a877;
+  --color-folder-front: #dcc196;
+  --color-folder-paper: var(--white);
+  --color-folder-sticker: var(--burgundy-500);
+  --color-folder-label: var(--neutral-900);
+  --color-folder-label-bg: rgb(250 246 238 / 0.7);
+  --color-folder-label-selected-bg: var(--ink-700);
+  --color-folder-label-selected-text: var(--oat-50);
+
   /* ---- Fonts (loaded in src/layouts/Base.astro) ---- */
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
   --font-hand: 'Caveat', 'Bradley Hand', cursive;
+  /* Window chrome, dock tooltips and menu bar */
+  --font-system: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   --text-menubar: 13px;
   --text-xs: 0.75rem;
@@ -99,6 +160,9 @@
   --radius-lg: 18px;
   --radius-menu: 8px;
   --radius-widget: 22px;
+  --radius-window: 10px;
+  --radius-dock: 20px;
+  --radius-icon: 23%; /* squircle-ish app icons */
   --border-thin: 1px;
 
   /* ---- Shadows (soft, paper-on-desk, no glow) ---- */
@@ -106,6 +170,10 @@
   --shadow-lifted: 0 2px 4px rgb(40 30 20 / 0.14), 0 10px 22px rgb(40 30 20 / 0.12);
   --shadow-menu: 0 6px 20px rgb(40 30 20 / 0.18);
   --shadow-widget: 0 1px 1px rgb(40 30 20 / 0.06), 0 6px 18px rgb(40 30 20 / 0.12);
+  --shadow-window: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 4px 10px rgb(40 30 20 / 0.12), 0 22px 50px rgb(40 30 20 / 0.22);
+  --shadow-window-inactive: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 3px 8px rgb(40 30 20 / 0.08), 0 14px 32px rgb(40 30 20 / 0.12);
+  --shadow-dock: 0 8px 24px rgb(40 30 20 / 0.18);
+  --shadow-icon: 0 1px 2px rgb(40 30 20 / 0.18), 0 3px 8px rgb(40 30 20 / 0.12);
 
   /* ---- Layout ---- */
   --menubar-h: 26px;
@@ -118,13 +186,40 @@
   --widget-gap: 18px;
   --widget-pad: 14px;
   --desktop-pad: 22px;
-  --dock-h: 96px; /* reserved for the dock (next step) */
-  --folder-col-w: 140px; /* reserved on the right for folder icons (next step) */
+  --dock-h: 96px; /* space kept clear for the dock */
+  --folder-col-w: 140px; /* right-hand column for desktop folders */
+  --folder-icon-size: 64px;
+  --folder-label-w: 110px;
+
+  --window-w: 680px;
+  --window-h: 460px;
+  --window-w-small: 460px;
+  --window-h-small: 340px;
+  --window-w-large: 820px;
+  --window-h-large: 520px;
+  --window-titlebar-h: 30px;
+  --window-margin: 8px; /* how close windows may get to the screen edge */
+  --window-cascade: 28px; /* offset between newly opened windows */
+  --text-window-title: 13px;
+  --finder-sidebar-w: 170px;
+  --traffic-size: 12px;
+  --traffic-gap: 8px;
+
+  --dock-icon-size: 52px;
+  --dock-pad: 6px;
+  --dock-gap: 6px;
+  --dock-dot-size: 4px;
+  --text-tooltip: 12px;
+
+  --home-icon-size: 60px; /* phone home-screen icons */
   --mobile-gutter: 16px;
 
   /* ---- Layers ---- */
   --z-wallpaper: 0;
   --z-widgets: 10;
+  --z-folders: 20;
+  --z-windows: 50;
+  --z-dock: 90;
   --z-menubar: 100;
   --z-menu: 110;
   --z-loader: 9999;

@@ -1,0 +1,82 @@
+---
+// Holds every window: the chrome template, one content template per app/project,
+// and the layer windows are placed in. The manager lives in src/scripts/windows.ts.
+import { getCollection } from 'astro:content';
+import { apps, projectApp } from '../../config/apps';
+import { siteConfig } from '../../config/site';
+import Window from './Window.astro';
+import FinderWindow from './FinderWindow.astro';
+import NotesWindow from './NotesWindow.astro';
+import PreviewWindow from './PreviewWindow.astro';
+import MailWindow from './MailWindow.astro';
+import TerminalWindow from './TerminalWindow.astro';
+import TrashWindow from './TrashWindow.astro';
+import ProjectWindow from './ProjectWindow.astro';
+
+interface Props {
+  /** Window to open on page load (from the URL), e.g. 'notes' or 'project/foo' */
+  initial?: string;
+}
+
+const { initial } = Astro.props;
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+
+const appTemplates = [
+  { app: apps.finder, Content: FinderWindow, props: { projects } },
+  { app: apps.notes, Content: NotesWindow, props: {} },
+  { app: apps.preview, Content: PreviewWindow, props: {} },
+  { app: apps.mail, Content: MailWindow, props: {} },
+  { app: apps.terminal, Content: TerminalWindow, props: {} },
+  { app: apps.trash, Content: TrashWindow, props: {} },
+];
+---
+
+<Window />
+
+{
+  appTemplates.map(({ app, Content, props }) => (
+    <template
+      data-window-template={app.id}
+      data-app={app.id}
+      data-app-label={app.label}
+      data-title={app.title}
+      data-path={app.path}
+      data-size={app.size}
+    >
+      <Content {...props} />
+    </template>
+  ))
+}
+
+{
+  projects.map((project) => (
+    <template
+      data-window-template={`project/${project.id}`}
+      data-app="finder"
+      data-app-label={projectApp.label}
+      data-title={project.data.title}
+      data-path={`${projectApp.pathPrefix}${project.id}`}
+      data-size={projectApp.size}
+    >
+      <ProjectWindow project={project} />
+    </template>
+  ))
+}
+
+<div class="windows" data-window-layer data-initial-window={initial} data-site-title={siteConfig.title}></div>
+
+<style>
+  /* Covers the screen below the menu bar; windows inside are absolutely positioned.
+     Clicks pass through to the desktop except on windows themselves. */
+  .windows {
+    position: fixed;
+    inset: var(--menubar-h) 0 0;
+    z-index: var(--z-windows);
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  import { initWindowManager } from '../../scripts/windows';
+  initWindowManager();
+</script>

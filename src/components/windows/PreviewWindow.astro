@@ -1,0 +1,30 @@
+---
+// Preview window content (placeholder). Fill this in later; the chrome comes from Window.astro.
+// To run JS when this window opens, listen for 'window:open' where detail.id === 'preview'.
+import { windowText } from '../../config/apps';
+
+const text = windowText.preview;
+---
+
+<div class="preview-window">
+  <h3 class="preview-window__heading">{text.heading}</h3>
+  <p class="preview-window__body">{text.body}</p>
+</div>
+
+<style>
+  .preview-window {
+    padding: var(--space-6);
+  }
+
+  .preview-window__heading {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 400;
+  }
+
+  .preview-window__body {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+</style>

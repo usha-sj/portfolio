@@ -1,0 +1,30 @@
+---
+// Terminal window content (placeholder). Fill this in later; the chrome comes from Window.astro.
+// To run JS when this window opens, listen for 'window:open' where detail.id === 'terminal'.
+import { windowText } from '../../config/apps';
+
+const text = windowText.terminal;
+---
+
+<div class="terminal-window">
+  <h3 class="terminal-window__heading">{text.heading}</h3>
+  <p class="terminal-window__body">{text.body}</p>
+</div>
+
+<style>
+  .terminal-window {
+    padding: var(--space-6);
+  }
+
+  .terminal-window__heading {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 400;
+  }
+
+  .terminal-window__body {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+</style>

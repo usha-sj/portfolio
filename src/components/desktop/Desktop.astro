@@ -5,6 +5,17 @@ import ClockWidget from './widgets/ClockWidget.astro';
 import CalendarWidget from './widgets/CalendarWidget.astro';
 import PhotoWidget from './widgets/PhotoWidget.astro';
 import StickyNote from './widgets/StickyNote.astro';
+import DesktopFolders from './DesktopFolders.astro';
+import Dock from './Dock.astro';
+import HomeScreen from './HomeScreen.astro';
+import WindowLayer from '../windows/WindowLayer.astro';
+
+interface Props {
+  /** Window to open on load, from the URL (see src/pages/[app].astro) */
+  initialWindow?: string;
+}
+
+const { initialWindow } = Astro.props;
 
 const [p1, p2, p3, p4] = desktopConfig.photos;
 ---
@@ -46,8 +57,10 @@ const [p1, p2, p3, p4] = desktopConfig.photos;
     </div>
   </main>
 
-  <!-- Next step: folder icons go in the right-hand column (--folder-col-w),
-       the dock in the bottom strip (--dock-h). -->
+  <HomeScreen />
+  <DesktopFolders />
+  <WindowLayer initial={initialWindow} />
+  <Dock />
 </div>
 
 <style>
@@ -112,6 +125,7 @@ const [p1, p2, p3, p4] = desktopConfig.photos;
         'photo3 photo3'
         'photo4 .';
       padding-inline: var(--mobile-gutter);
+      padding-bottom: var(--space-8); /* the home-screen app grid follows */
     }
   }
 </style>

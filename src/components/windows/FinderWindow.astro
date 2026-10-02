@@ -1,0 +1,185 @@
+---
+// Finder: every project from the collection. Sidebar switches between Projects (by `order`)
+// and Recents (newest year first). Clicking a project opens its window.
+import type { CollectionEntry } from 'astro:content';
+import { windowText } from '../../config/apps';
+import FolderIcon from '../icons/FolderIcon.astro';
+
+interface Props {
+  projects: CollectionEntry<'projects'>[];
+}
+
+const { projects } = Astro.props;
+const t = windowText.finder;
+---
+
+<div class="finder" data-finder>
+  <nav class="finder__sidebar" aria-label="Finder sidebar">
+    <p class="finder__sidebar-heading">{t.sidebarHeading}</p>
+    <button type="button" class="finder__side-item" data-finder-view="projects" aria-pressed="true">
+      {t.sidebar.projects}
+    </button>
+    <button type="button" class="finder__side-item" data-finder-view="recents" aria-pressed="false">
+      {t.sidebar.recents}
+    </button>
+  </nav>
+
+  <div class="finder__main">
+    <ul class="finder__grid" data-finder-list>
+      {
+        projects.map((p) => (
+          <li data-order={p.data.order} data-year={p.data.year}>
+            <button type="button" class="finder__item" data-open-window={`project/${p.id}`}>
+              <FolderIcon class="finder__icon" />
+              <span class="finder__name">{p.data.title}</span>
+              <span class="finder__meta">{p.data.year}</span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="finder__status">{t.countLabel.replace('{n}', String(projects.length))}</p>
+  </div>
+</div>
+
+<style>
+  .finder {
+    display: grid;
+    grid-template-columns: var(--finder-sidebar-w) minmax(0, 1fr);
+    min-height: 100%;
+    font-family: var(--font-system);
+    font-size: var(--text-menubar);
+  }
+
+  .finder__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-3) var(--space-2);
+    background: var(--color-finder-sidebar);
+    border-right: var(--border-thin) solid var(--color-window-titlebar-border);
+  }
+
+  .finder__sidebar-heading {
+    margin: 0 var(--space-2) var(--space-1);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--color-text-muted);
+  }
+
+  .finder__side-item {
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .finder__side-item[aria-pressed='true'] {
+    background: var(--color-finder-selected);
+    font-weight: 600;
+  }
+
+  .finder__main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .finder__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: var(--space-4);
+    flex: 1;
+    align-content: start;
+    margin: 0;
+    padding: var(--space-5);
+    list-style: none;
+  }
+
+  .finder__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+    padding: var(--space-2);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .finder__item:hover,
+  .finder__item:focus-visible {
+    background: var(--color-finder-selected);
+  }
+
+  .finder__item :global(.finder__icon) {
+    width: var(--folder-icon-size);
+  }
+
+  .finder__name {
+    font-weight: 500;
+  }
+
+  .finder__meta,
+  .finder__status {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .finder__status {
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    border-top: var(--border-thin) solid var(--color-window-titlebar-border);
+    text-align: center;
+  }
+
+  @media (max-width: 767px) {
+    .finder {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .finder__sidebar {
+      flex-direction: row;
+      align-items: center;
+      border-right: 0;
+      border-bottom: var(--border-thin) solid var(--color-window-titlebar-border);
+    }
+
+    .finder__sidebar-heading {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Window content is cloned from a <template> each time it opens, so wire it up on open.
+  document.addEventListener('window:open', (e) => {
+    const { id, el } = (e as CustomEvent<{ id: string; el: HTMLElement }>).detail;
+    if (id !== 'finder') return;
+
+    const list = el.querySelector<HTMLElement>('[data-finder-list]')!;
+    const buttons = [...el.querySelectorAll<HTMLButtonElement>('[data-finder-view]')];
+    const items = [...list.children] as HTMLElement[];
+
+    const show = (view: string) => {
+      const sorted = [...items].sort((a, b) =>
+        view === 'recents'
+          ? Number(b.dataset.year) - Number(a.dataset.year)
+          : Number(a.dataset.order) - Number(b.dataset.order),
+      );
+      list.replaceChildren(...sorted);
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.finderView === view)));
+    };
+
+    buttons.forEach((b) => b.addEventListener('click', () => show(b.dataset.finderView!)));
+  });
+</script>
