@@ -1,36 +1,107 @@
 ---
-import { loaderConfig } from '../config/loader';
+import { loaderConfig as cfg } from '../config/loader';
+// Raw text import (built into Vite). Replace src/config/lotus.txt to swap the art.
+import lotus from '../config/lotus.txt?raw';
+
+const artLines = lotus.replace(/\s+$/, '').split('\n');
+
+const bar = (percent: number) => {
+  const filled = Math.round((percent / 100) * cfg.barWidth);
+  return { filled: '■'.repeat(filled), empty: '·'.repeat(cfg.barWidth - filled) };
+};
+
+const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionLabels)[];
 ---
 
 <!--
   Runs before the overlay is parsed so there's no flash: only shows the loader
   if it hasn't run this session. With JS off, the overlay never appears.
 -->
-<script is:inline define:vars={{ key: loaderConfig.storageKey }}>
+<script is:inline define:vars={{ key: cfg.storageKey }}>
   try {
     if (!sessionStorage.getItem(key)) document.documentElement.classList.add('loader-active');
   } catch (e) {}
 </script>
 
 <div id="loader" class="loader" role="dialog" aria-modal="true" aria-label="Terminal login">
-  <button type="button" class="loader__skip">{loaderConfig.skip}</button>
+  <button type="button" class="loader__skip">{cfg.skip}</button>
+
   <div class="loader__screen">
-    <div class="loader__log" aria-live="polite"></div>
-    <label class="loader__prompt" hidden>
-      <span class="loader__host">{loaderConfig.host}</span>
-      <span class="loader__label"></span><span class="loader__mirror"></span><span
-        class="loader__cursor"
-        aria-hidden="true"></span>
-      <input
-        class="loader__input"
-        type="text"
-        autocomplete="off"
-        autocapitalize="off"
-        autocorrect="off"
-        spellcheck="false"
-        enterkeyhint="go"
-      />
-    </label>
+    <div class="loader__layout">
+      <!-- Left: ASCII art, revealed line by line -->
+      <pre class="loader__art" aria-hidden="true">{
+        artLines.map((line) => <span class="loader__art-line" data-reveal="art">{line + '\n'}</span>)
+      }</pre>
+
+      <!-- Right: fetch-style info, then the shell -->
+      <div class="loader__info">
+        <div class="loader__heading" data-reveal="info">
+          <span class="loader__host-name">{cfg.host}</span>
+          <span class="loader__rule" aria-hidden="true">{'-'.repeat(cfg.host.length)}</span>
+        </div>
+
+        <section class="loader__box" data-reveal="info" aria-labelledby="loader-hw-title">
+          <h2 class="loader__box-title" id="loader-hw-title">{cfg.hardwareTitle}</h2>
+          <dl class="loader__rows">
+            {
+              cfg.hardware.map((row) => (
+                <div class="loader__row" data-reveal="info">
+                  <dt>{row.label}</dt>
+                  <dd>
+                    {row.value}
+                    {row.bar !== undefined && (
+                      <span class="loader__bar">
+                        {' ['}
+                        <span class="loader__bar-fill">{bar(row.bar).filled}</span>
+                        <span class="loader__bar-empty">{bar(row.bar).empty}</span>
+                        {`] ${row.bar}%`}
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </section>
+
+        <section class="loader__box" data-reveal="info" aria-labelledby="loader-session-title">
+          <h2 class="loader__box-title" id="loader-session-title">{cfg.sessionTitle}</h2>
+          <dl class="loader__rows">
+            {
+              sessionKeys.map((key) => (
+                <div class="loader__row" data-reveal="info">
+                  <dt>{cfg.sessionLabels[key]}</dt>
+                  <dd data-session={key}>{cfg.sessionUnknown}</dd>
+                </div>
+              ))
+            }
+          </dl>
+        </section>
+
+        <div class="loader__dots" data-reveal="info" aria-hidden="true">
+          {cfg.dots.map((token) => <span style={`background: var(${token})`} />)}
+        </div>
+
+        <div class="loader__shell">
+          <div class="loader__log" aria-live="polite"></div>
+          <label class="loader__prompt" hidden>
+            <span class="loader__host">{cfg.host}</span>
+            <span class="loader__label"></span><span class="loader__mirror"></span><span
+              class="loader__cursor"
+              aria-hidden="true"></span>
+            <input
+              class="loader__input"
+              type="text"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint="go"
+            />
+          </label>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -56,22 +127,131 @@ import { loaderConfig } from '../config/loader';
     display: block;
   }
 
+  /* Hidden until the sequence reveals them (all at once with reduced motion) */
+  .loader [data-reveal]:not(.is-shown) {
+    visibility: hidden;
+  }
+
   .loader__screen {
     min-height: 100%;
-    padding: var(--space-12) var(--space-5) var(--space-16);
+    padding: var(--space-12) var(--space-8) var(--space-16);
     cursor: text;
   }
 
+  .loader__layout {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-12);
+    align-items: start;
+    max-width: 72rem;
+  }
+
+  /* ---- ASCII art: fixed font, fixed leading, never wraps ---- */
+  .loader__art {
+    margin: 0;
+    padding-top: var(--space-8);
+    font-family: var(--font-mono);
+    font-size: var(--text-ascii);
+    line-height: var(--leading-ascii);
+    white-space: pre;
+    color: var(--color-term-art);
+  }
+
+  /* ---- Info ---- */
+  .loader__info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  .loader__heading {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+  }
+
+  .loader__host-name,
+  .loader__host {
+    color: var(--color-term-host);
+  }
+
+  .loader__rule {
+    color: var(--color-term-muted);
+  }
+
+  /* Box with its title cut into the top border */
+  .loader__box {
+    position: relative;
+    max-width: 44rem;
+    padding: var(--space-4) var(--space-4) var(--space-3);
+    border: var(--border-thin) solid var(--color-term-border);
+  }
+
+  .loader__box-title {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    translate: -50% -50%;
+    margin: 0;
+    padding: 0 var(--space-2);
+    background: var(--color-term-bg);
+    font-size: inherit;
+    font-weight: 400;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .loader__rows {
+    margin: 0;
+  }
+
+  .loader__row {
+    display: grid;
+    grid-template-columns: 10ch minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .loader__row dt {
+    font-weight: 500;
+    color: var(--color-term-label);
+  }
+
+  .loader__row dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .loader__bar {
+    white-space: nowrap;
+  }
+
+  .loader__bar-fill {
+    color: var(--color-term-accent);
+  }
+
+  .loader__bar-empty {
+    color: var(--color-term-bar-empty);
+  }
+
+  .loader__dots {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .loader__dots span {
+    width: 0.65em;
+    height: 0.65em;
+    border-radius: 50%;
+  }
+
+  /* ---- Shell ---- */
   /* Lines are created in JS, so they don't get Astro's scoped attribute */
   .loader__log :global(p) {
     min-height: 1.6em;
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
-  }
-
-  .loader__host {
-    color: var(--color-term-accent);
   }
 
   .loader__host::after {
@@ -120,9 +300,9 @@ import { loaderConfig } from '../config/loader';
     z-index: 1;
     font: inherit;
     color: var(--color-term-muted);
-    background: none;
+    background: var(--color-term-bg); /* stays readable over scrolled text */
     border: 0;
-    padding: var(--space-1);
+    padding: var(--space-1) var(--space-2);
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -136,6 +316,45 @@ import { loaderConfig } from '../config/loader';
   @keyframes loader-blink {
     50% {
       opacity: 0;
+    }
+  }
+
+  /* ---- Narrower screens: stack, art on top ---- */
+  @media (max-width: 900px) {
+    .loader__layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-6);
+    }
+
+    .loader__art {
+      padding-top: 0;
+    }
+  }
+
+  /* ---- Phone: smaller text and art ---- */
+  @media (max-width: 767px) {
+    .loader {
+      font-size: var(--text-sm);
+    }
+
+    .loader__screen {
+      padding: var(--space-12) var(--mobile-gutter);
+    }
+
+    .loader__art {
+      font-size: var(--text-ascii-sm);
+    }
+
+    .loader__row {
+      grid-template-columns: 9ch minmax(0, 1fr);
+      gap: var(--space-2);
+    }
+  }
+
+  /* Too narrow even for the small art: hide it rather than let it wrap */
+  @media (max-width: 339px) {
+    .loader__art {
+      display: none;
     }
   }
 
@@ -169,17 +388,82 @@ import { loaderConfig } from '../config/loader';
     document.dispatchEvent(new CustomEvent('loader:complete'));
   }
 
-  const BOOT_TYPING_MS = 3000; // total typing budget for boot lines
-  const BOOT_LINE_PAUSE_MS = 80;
+  // Timing: art + info reveal ~0.8s, boot typing ~2.4s → login prompt in under ~4s
+  const ART_REVEAL_MS = 500;
+  const INFO_DELAY_MS = 150;
+  const INFO_REVEAL_MS = 600;
+  const BOOT_TYPING_MS = 2200;
+  const BOOT_LINE_PAUSE_MS = 40;
   const TEXT_CHAR_MS = 25; // typing speed for welcome/response lines
   const EXIT_DELAY_MS = 1500;
 
-  const overlay = document.getElementById('loader');
+  // ---- Visitor's session info: read locally for display, never sent anywhere ----
+  type UAData = { brands?: { brand: string; version: string }[]; platform?: string };
+  const uaData = () => (navigator as Navigator & { userAgentData?: UAData }).userAgentData;
 
-  if (overlay && document.documentElement.classList.contains('loader-active')) {
-    run(overlay);
-  } else {
-    markDesktopReady();
+  function safe(get: () => string | undefined) {
+    try {
+      return get() || cfg.sessionUnknown;
+    } catch {
+      return cfg.sessionUnknown;
+    }
+  }
+
+  function detectBrowser() {
+    const brand = uaData()?.brands?.find((b) => !/not.?a.?brand|chromium/i.test(b.brand));
+    if (brand) return `${brand.brand} ${brand.version}`;
+
+    const ua = navigator.userAgent;
+    const tests: [RegExp, string][] = [
+      [/Edg\/(\d+)/, 'Edge'],
+      [/OPR\/(\d+)/, 'Opera'],
+      [/Firefox\/(\d+)/, 'Firefox'],
+      [/Chrome\/(\d+)/, 'Chrome'],
+      [/Version\/([\d.]+).*Safari/, 'Safari'],
+    ];
+    for (const [re, name] of tests) {
+      const m = ua.match(re);
+      if (m) return `${name} ${m[1]}`;
+    }
+    return undefined;
+  }
+
+  function detectOS() {
+    const platform = uaData()?.platform;
+    if (platform) return platform;
+
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua)) return 'iOS';
+    if (/Android/.test(ua)) return 'Android';
+    if (/Mac OS X/.test(ua)) return 'macOS';
+    if (/Windows/.test(ua)) return 'Windows';
+    if (/CrOS/.test(ua)) return 'ChromeOS';
+    if (/Linux/.test(ua)) return 'Linux';
+    return undefined;
+  }
+
+  function formatTime(d: Date) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function fillSession(root: HTMLElement) {
+    const values: Record<keyof typeof cfg.sessionLabels, string> = {
+      user: cfg.sessionPendingUser,
+      browser: safe(detectBrowser),
+      os: safe(detectOS),
+      screen: safe(() => {
+        const dpr = window.devicePixelRatio;
+        return `${screen.width}×${screen.height}${dpr && dpr !== 1 ? ` @${dpr}x` : ''}`;
+      }),
+      cores: safe(() => (navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} logical` : undefined)),
+      timezone: safe(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
+      login: safe(() => formatTime(new Date())),
+    };
+    for (const [key, value] of Object.entries(values)) {
+      const el = root.querySelector<HTMLElement>(`[data-session="${key}"]`);
+      if (el) el.textContent = value;
+    }
   }
 
   function run(overlay: HTMLElement) {
@@ -189,9 +473,14 @@ import { loaderConfig } from '../config/loader';
     const mirror = overlay.querySelector<HTMLElement>('.loader__mirror')!;
     const input = overlay.querySelector<HTMLInputElement>('.loader__input')!;
     const skip = overlay.querySelector<HTMLButtonElement>('.loader__skip')!;
+    const sessionUser = overlay.querySelector<HTMLElement>('[data-session="user"]');
+    const artLines = [...overlay.querySelectorAll<HTMLElement>('[data-reveal="art"]')];
+    const infoItems = [...overlay.querySelectorAll<HTMLElement>('[data-reveal="info"]')];
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let done = false;
+
+    fillSession(overlay);
 
     function finish() {
       if (done) return;
@@ -220,6 +509,16 @@ import { loaderConfig } from '../config/loader';
     };
 
     const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+    // Shows elements one after another, spread over totalMs (instantly with reduced motion)
+    async function reveal(els: HTMLElement[], totalMs: number) {
+      const step = totalMs / Math.max(els.length, 1);
+      for (const el of els) {
+        if (done) return;
+        el.classList.add('is-shown');
+        if (!reducedMotion) await sleep(step);
+      }
+    }
 
     async function typeLine(text: string, charMs: number) {
       const line = document.createElement('p');
@@ -280,6 +579,13 @@ import { loaderConfig } from '../config/loader';
     }
 
     (async () => {
+      // Art and info boxes reveal side by side; info starts a beat later
+      await Promise.all([
+        reveal(artLines, ART_REVEAL_MS),
+        (reducedMotion ? Promise.resolve() : sleep(INFO_DELAY_MS)).then(() => reveal(infoItems, INFO_REVEAL_MS)),
+      ]);
+      if (done) return;
+
       const totalChars = cfg.bootLines.reduce((n, l) => n + l.length, 0);
       const bootCharMs = BOOT_TYPING_MS / totalChars;
 
@@ -288,7 +594,6 @@ import { loaderConfig } from '../config/loader';
         if (done) return;
         if (!reducedMotion) await sleep(BOOT_LINE_PAUSE_MS);
       }
-      printLine('');
 
       const username = await ask(cfg.prompts.username, false);
       if (done) return;
@@ -299,6 +604,8 @@ import { loaderConfig } from '../config/loader';
       try {
         sessionStorage.setItem(cfg.usernameKey, name);
       } catch {}
+      if (sessionUser) sessionUser.textContent = name;
+
       await typeLine(cfg.welcome.replace('{name}', name), TEXT_CHAR_MS);
       if (done) return;
       await typeLine(line, TEXT_CHAR_MS);
@@ -307,5 +614,14 @@ import { loaderConfig } from '../config/loader';
       await sleep(EXIT_DELAY_MS);
       finish();
     })();
+  }
+
+  // ---- Start (at the end, so every helper above is defined first) ----
+  const overlay = document.getElementById('loader');
+
+  if (overlay && document.documentElement.classList.contains('loader-active')) {
+    run(overlay);
+  } else {
+    markDesktopReady();
   }
 </script>

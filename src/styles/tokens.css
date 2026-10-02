@@ -7,13 +7,15 @@
   /* ---- Palette: oat paper, ink blue, burgundy ---- */
   --oat-50: #faf6ee;
   --oat-100: #f3ecdf;
-  --oat-200: #e8dcc6;
-  --oat-300: #d6c5a6;
+  --oat-200: #ede3d1;
+  --oat-300: #ded1b9;
   --ink-900: #1c2a44;
   --ink-700: #2f4166;
   --ink-500: #5b6c8f;
+  --ink-300: #93a6cf; /* lighter ink, readable on black */
   --burgundy-700: #6b1f2a;
   --burgundy-500: #8c2f3c;
+  --burgundy-300: #c97a85;
   --burgundy-100: #ecd5d3;
   --neutral-900: #1d1b18;
   --neutral-600: #6b655c;
@@ -50,10 +52,15 @@
 
   /* Loader terminal */
   --color-term-bg: var(--black);
-  --color-term-text: #d8d8d8;
-  --color-term-muted: #8b8b8b;
-  --color-term-accent: #9fc49a;
-  --color-term-hover: #fff;
+  --color-term-text: var(--oat-200);
+  --color-term-muted: var(--neutral-400);
+  --color-term-accent: var(--burgundy-300);
+  --color-term-hover: var(--white);
+  --color-term-art: var(--burgundy-300);
+  --color-term-host: var(--ink-300);
+  --color-term-label: var(--oat-300);
+  --color-term-border: var(--ink-500);
+  --color-term-bar-empty: var(--neutral-600);
 
   /* ---- Fonts (loaded in src/layouts/Base.astro) ---- */
   --font-display: 'Instrument Serif', Georgia, serif;
@@ -70,6 +77,9 @@
   --text-2xl: 2.5rem;
   --text-3xl: 3.5rem;
   --text-term: 15px;
+  --text-ascii: 16px;
+  --text-ascii-sm: 8px; /* phones */
+  --leading-ascii: 1.15; /* fixed so the art never stretches */
   --text-input-min: 16px; /* stops iOS zooming into focused inputs */
 
   /* ---- Spacing ---- */
