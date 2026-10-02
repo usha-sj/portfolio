@@ -1,0 +1,296 @@
+---
+import { loaderConfig } from '../config/loader';
+---
+
+<!--
+  Runs before the overlay is parsed so there's no flash: only shows the loader
+  if it hasn't run this session. With JS off, the overlay never appears.
+-->
+<script is:inline define:vars={{ key: loaderConfig.storageKey }}>
+  try {
+    if (!sessionStorage.getItem(key)) document.documentElement.classList.add('loader-active');
+  } catch (e) {}
+</script>
+
+<div id="loader" class="loader" role="dialog" aria-modal="true" aria-label="Terminal login">
+  <button type="button" class="loader__skip">{loaderConfig.skip}</button>
+  <div class="loader__screen">
+    <div class="loader__log" aria-live="polite"></div>
+    <label class="loader__prompt" hidden>
+      <span class="loader__host">{loaderConfig.host}</span>
+      <span class="loader__label"></span><span class="loader__mirror"></span><span
+        class="loader__cursor"
+        aria-hidden="true"></span>
+      <input
+        class="loader__input"
+        type="text"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        enterkeyhint="go"
+      />
+    </label>
+  </div>
+</div>
+
+<style>
+  .loader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    color: #d8d8d8;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-y: auto;
+  }
+
+  :global(html.loader-active) {
+    overflow: hidden;
+  }
+
+  :global(html.loader-active) .loader {
+    display: block;
+  }
+
+  .loader__screen {
+    min-height: 100%;
+    padding: 3rem 1.25rem 4rem;
+    cursor: text;
+  }
+
+  /* Lines are created in JS, so they don't get Astro's scoped attribute */
+  .loader__log :global(p) {
+    min-height: 1.6em;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .loader__host {
+    color: #7ee787;
+  }
+
+  .loader__host::after {
+    content: ':~$ ';
+    color: #d8d8d8;
+  }
+
+  .loader__prompt {
+    position: relative;
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .loader__prompt[hidden] {
+    display: none;
+  }
+
+  /* Real input sits over the prompt line, invisible, so taps open the mobile keyboard.
+     16px font stops iOS from zooming on focus. */
+  .loader__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    font-size: 16px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: transparent;
+  }
+
+  .loader__cursor {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.1em;
+    vertical-align: text-bottom;
+    background: #d8d8d8;
+    animation: loader-blink 1s steps(1) infinite;
+  }
+
+  .loader__skip {
+    position: fixed;
+    top: 1rem;
+    right: 1.25rem;
+    z-index: 1;
+    font: inherit;
+    color: #8b8b8b;
+    background: none;
+    border: 0;
+    padding: 0.25rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .loader__skip:hover,
+  .loader__skip:focus-visible {
+    color: #fff;
+  }
+
+  @keyframes loader-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loader__cursor {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  import { loaderConfig as cfg } from '../config/loader';
+
+  /**
+   * Called once when the loader is done (finished, skipped, or Esc).
+   * Add the GSAP exit transition here later; hide the overlay at the end of it.
+   */
+  function onLoaderComplete(overlay: HTMLElement) {
+    overlay.style.display = 'none';
+    document.documentElement.classList.remove('loader-active');
+    document.dispatchEvent(new CustomEvent('loader:complete'));
+  }
+
+  const BOOT_TYPING_MS = 3000; // total typing budget for boot lines
+  const BOOT_LINE_PAUSE_MS = 80;
+  const TEXT_CHAR_MS = 25; // typing speed for welcome/response lines
+  const EXIT_DELAY_MS = 1500;
+
+  const overlay = document.getElementById('loader');
+
+  if (overlay && document.documentElement.classList.contains('loader-active')) {
+    run(overlay);
+  }
+
+  function run(overlay: HTMLElement) {
+    const log = overlay.querySelector<HTMLElement>('.loader__log')!;
+    const prompt = overlay.querySelector<HTMLLabelElement>('.loader__prompt')!;
+    const label = overlay.querySelector<HTMLElement>('.loader__label')!;
+    const mirror = overlay.querySelector<HTMLElement>('.loader__mirror')!;
+    const input = overlay.querySelector<HTMLInputElement>('.loader__input')!;
+    const skip = overlay.querySelector<HTMLButtonElement>('.loader__skip')!;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let done = false;
+
+    function finish() {
+      if (done) return;
+      done = true;
+      try {
+        sessionStorage.setItem(cfg.storageKey, '1');
+      } catch {}
+      document.removeEventListener('keydown', onKeydown);
+      input.blur();
+      onLoaderComplete(overlay);
+    }
+
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key === 'Escape') finish();
+    }
+
+    document.addEventListener('keydown', onKeydown);
+    skip.addEventListener('click', finish);
+    overlay.addEventListener('click', (e) => {
+      if (e.target !== skip && !prompt.hidden) input.focus();
+    });
+
+    const hasBadWord = (s: string) => {
+      const lower = s.toLowerCase();
+      return cfg.badWords.some((w) => lower.includes(w));
+    };
+
+    const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+    async function typeLine(text: string, charMs: number) {
+      const line = document.createElement('p');
+      log.appendChild(line);
+      if (reducedMotion) {
+        line.textContent = text;
+        return;
+      }
+      for (const ch of text) {
+        if (done) return;
+        line.textContent += ch;
+        await sleep(charMs);
+      }
+    }
+
+    function printLine(text: string) {
+      const line = document.createElement('p');
+      line.textContent = text;
+      log.appendChild(line);
+    }
+
+    // Shows a prompt, resolves with what the user typed when they press Enter.
+    function ask(promptText: string, masked: boolean) {
+      label.textContent = promptText;
+      mirror.textContent = '';
+      input.value = '';
+      input.type = masked ? 'password' : 'text';
+      prompt.hidden = false;
+      input.focus();
+
+      const render = () => {
+        mirror.textContent = masked ? '*'.repeat(input.value.length) : input.value;
+      };
+
+      return new Promise<string>((resolve) => {
+        const onEnter = (e: KeyboardEvent) => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          input.removeEventListener('input', render);
+          input.removeEventListener('keydown', onEnter);
+          const value = input.value;
+          prompt.hidden = true;
+          const echo = !masked && hasBadWord(value) ? cfg.guestName : mirror.textContent;
+          printLine(`${cfg.host}:~$ ${promptText}${echo}`);
+          resolve(value);
+        };
+        input.addEventListener('input', render);
+        input.addEventListener('keydown', onEnter);
+      });
+    }
+
+    function respond(username: string, password: string) {
+      const name = username.trim() || cfg.guestName;
+      if (hasBadWord(username) || hasBadWord(password)) return { name: cfg.guestName, line: cfg.playNice };
+      if (password.toLowerCase() === 'password') return { name, line: cfg.easterEgg };
+      const pick = cfg.randomResponses[Math.floor(Math.random() * cfg.randomResponses.length)];
+      return { name, line: pick };
+    }
+
+    (async () => {
+      const totalChars = cfg.bootLines.reduce((n, l) => n + l.length, 0);
+      const bootCharMs = BOOT_TYPING_MS / totalChars;
+
+      for (const line of cfg.bootLines) {
+        await typeLine(line, bootCharMs);
+        if (done) return;
+        if (!reducedMotion) await sleep(BOOT_LINE_PAUSE_MS);
+      }
+      printLine('');
+
+      const username = await ask(cfg.prompts.username, false);
+      if (done) return;
+      const password = await ask(cfg.prompts.password, true);
+      if (done) return;
+
+      const { name, line } = respond(username, password);
+      await typeLine(cfg.welcome.replace('{name}', name), TEXT_CHAR_MS);
+      if (done) return;
+      await typeLine(line, TEXT_CHAR_MS);
+      if (done) return;
+
+      await sleep(EXIT_DELAY_MS);
+      finish();
+    })();
+  }
+</script>
