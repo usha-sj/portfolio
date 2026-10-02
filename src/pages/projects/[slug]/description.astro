@@ -1,0 +1,20 @@
+---
+// /projects/<slug>/description: the desktop with that project's <slug>.txt open (loader skipped).
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Desktop from '../../../components/desktop/Desktop.astro';
+import { projectFileApp } from '../../../config/apps';
+import { siteConfig } from '../../../config/site';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+}
+
+const { project } = Astro.props as { project: CollectionEntry<'projects'> };
+const fileName = projectFileApp.fileName.replace('{slug}', project.id);
+---
+
+<Base title={`${fileName} · ${siteConfig.title}`} skipLoader>
+  <Desktop initialWindow={`project/${project.id}${projectFileApp.pathSuffix}`} />
+</Base>

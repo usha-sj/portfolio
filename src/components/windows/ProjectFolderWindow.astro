@@ -1,0 +1,114 @@
+---
+// A project folder, Finder-style: the files inside it. For now that's <slug>.txt
+// (opens the TextEdit window) plus any `files` from the project's frontmatter.
+import type { CollectionEntry } from 'astro:content';
+import { projectFileApp, windowText } from '../../config/apps';
+import FileIcon from '../icons/FileIcon.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const textFile = {
+  name: projectFileApp.fileName.replace('{slug}', project.id),
+  window: `project/${project.id}${projectFileApp.pathSuffix}`,
+};
+const extraFiles = project.data.files;
+const count = 1 + extraFiles.length;
+const ext = (name: string) => name.split('.').pop() ?? '';
+const t = windowText.folder;
+---
+
+<div class="folder-window">
+  <ul class="folder-window__grid" data-select-group>
+    <li>
+      <button type="button" class="folder-window__item" data-select-open={textFile.window} aria-describedby="select-open-hint">
+        <FileIcon ext={ext(textFile.name)} class="folder-window__icon" />
+        <span class="folder-window__name">{textFile.name}</span>
+      </button>
+    </li>
+    {
+      extraFiles.map((file) => (
+        <li>
+          <a class="folder-window__item" href={file.src} target="_blank" rel="noopener noreferrer">
+            <FileIcon ext={ext(file.name)} class="folder-window__icon" />
+            <span class="folder-window__name">{file.name}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="folder-window__status">{count === 1 ? t.countLabelOne : t.countLabel.replace('{n}', String(count))}</p>
+</div>
+
+<style>
+  .folder-window {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    font-family: var(--font-system);
+    font-size: var(--text-menubar);
+  }
+
+  .folder-window__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--folder-label-w), 1fr));
+    gap: var(--space-4);
+    flex: 1;
+    align-content: start;
+    margin: 0;
+    padding: var(--space-5);
+    list-style: none;
+  }
+
+  .folder-window__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    width: 100%;
+    padding: var(--space-2) var(--space-1);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: center;
+    text-decoration: none;
+    cursor: default;
+  }
+
+  .folder-window__item :global(.folder-window__icon) {
+    width: calc(var(--folder-icon-size) * 0.75);
+  }
+
+  .folder-window__name {
+    padding: 1px var(--space-1);
+    border-radius: var(--radius-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .folder-window__item[data-selected] {
+    background: var(--color-finder-selected);
+  }
+
+  .folder-window__item[data-selected] .folder-window__name {
+    background: var(--color-folder-label-selected-bg);
+    color: var(--color-folder-label-selected-text);
+  }
+
+  .folder-window__item:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+
+  .folder-window__status {
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    border-top: var(--border-thin) solid var(--color-window-titlebar-border);
+    font-size: var(--text-xs);
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+</style>

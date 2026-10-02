@@ -1,0 +1,37 @@
+---
+// macOS-style document icon: white page, folded corner, a small extension badge.
+interface Props {
+  ext?: string;
+  class?: string;
+}
+const { ext = 'txt', class: className } = Astro.props;
+---
+
+<svg class:list={['file-icon', className]} viewBox="0 0 48 60" aria-hidden="true">
+  <path class="file-icon__page" d="M6 2h25l13 13v41a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" />
+  <path class="file-icon__fold" d="M31 2v11a2 2 0 0 0 2 2h11z" />
+  <path class="file-icon__lines" d="M11 22h26M11 27h26M11 32h20" />
+  <rect class="file-icon__badge" x="9" y="41" width="30" height="11" rx="2" />
+  <text class="file-icon__ext" x="24" y="49.2" text-anchor="middle">{ext.toUpperCase()}</text>
+</svg>
+
+<style>
+  .file-icon {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.2));
+  }
+
+  .file-icon__page { fill: var(--color-file-page); }
+  .file-icon__fold { fill: var(--color-file-fold); }
+  .file-icon__lines { stroke: var(--color-file-lines); stroke-width: 2; stroke-linecap: round; }
+  .file-icon__badge { fill: var(--color-file-badge); }
+  .file-icon__ext {
+    fill: var(--color-file-badge-text);
+    font-family: var(--font-system);
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+</style>

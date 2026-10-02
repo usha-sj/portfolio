@@ -6,9 +6,11 @@
  *   - any element with data-open-window="<id>" opens it on click
  *   - or: document.dispatchEvent(new CustomEvent('window:request', { detail: { id } }))
  *
- * Events fired on document (detail: { id, el }): window:open, window:close, window:focus.
- * Window content is cloned from a <template>, so content scripts should set themselves
- * up on 'window:open' (see FinderWindow.astro).
+ * Events fired on document (detail: { id, el }): window:open, window:close, window:focus,
+ * window:maximize (detail also has `maximized`).
+ * Window content is cloned from a <template>, so content scripts live in src/scripts/,
+ * set themselves up on 'window:open', and are started from WindowLayer.astro
+ * (see finder.ts, resume.ts). Don't put <script> tags in window components.
  */
 
 // ---------------------------------------------------------------------------
@@ -51,11 +53,20 @@ const MOBILE_QUERY = '(max-width: 767px)';
 export function initWindowManager() {
   // Wait for every module script on the page, so content listeners for 'window:open'
   // are registered before the first window (from the URL) opens.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setup, { once: true });
-  } else {
+  // Module scripts run while readyState is already 'interactive', so only 'complete'
+  // means every script has run. 'load' is a fallback in case DOMContentLoaded has passed.
+  if (document.readyState === 'complete') {
     setup();
+    return;
   }
+  let done = false;
+  const once = () => {
+    if (done) return;
+    done = true;
+    setup();
+  };
+  document.addEventListener('DOMContentLoaded', once, { once: true });
+  window.addEventListener('load', once, { once: true });
 }
 
 function setup() {
@@ -275,6 +286,7 @@ function setup() {
     w.el
       .querySelector('[data-window-action="maximize"]')
       ?.setAttribute('aria-label', on ? 'Restore window size' : 'Maximise window');
+    document.dispatchEvent(new CustomEvent('window:maximize', { detail: { id, el: w.el, maximized: on } }));
   }
 
   // ---- Per-window wiring: focus on click, buttons, dragging ----

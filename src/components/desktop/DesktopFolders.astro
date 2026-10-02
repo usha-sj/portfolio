@@ -8,11 +8,11 @@ import FolderIcon from '../icons/FolderIcon.astro';
 const featured = (await getCollection('projects', (p) => p.data.featured)).sort((a, b) => a.data.order - b.data.order);
 ---
 
-<ul class="folders" aria-label={desktopConfig.folders.label}>
+<ul class="folders" aria-label={desktopConfig.folders.label} data-select-group>
   {
     featured.map((p) => (
       <li>
-        <button type="button" class="folder" data-folder data-folder-window={`project/${p.id}`} aria-describedby="folders-hint">
+        <button type="button" class="folder" data-select-open={`project/${p.id}`} aria-describedby="select-open-hint">
           <span class="folder__icon">
             <FolderIcon />
           </span>
@@ -22,7 +22,8 @@ const featured = (await getCollection('projects', (p) => p.data.featured)).sort(
     ))
   }
 </ul>
-<p id="folders-hint" class="visually-hidden">{desktopConfig.folders.hint}</p>
+<!-- Shared hint for every select-then-open icon (desktop, Finder, folder windows) -->
+<p id="select-open-hint" class="visually-hidden">{desktopConfig.folders.hint}</p>
 
 <style>
   .folders {
@@ -66,7 +67,9 @@ const featured = (await getCollection('projects', (p) => p.data.featured)).sort(
     padding: 1px var(--space-1);
     border-radius: var(--radius-sm);
     background: var(--color-folder-label-bg);
+    font-weight: 500;
     text-align: center;
+    text-shadow: var(--shadow-folder-label);
     overflow-wrap: anywhere;
   }
 
@@ -77,6 +80,7 @@ const featured = (await getCollection('projects', (p) => p.data.featured)).sort(
   .folder[data-selected] .folder__label {
     background: var(--color-folder-label-selected-bg);
     color: var(--color-folder-label-selected-text);
+    text-shadow: none;
   }
 
   .folder:focus-visible {
@@ -95,31 +99,7 @@ const featured = (await getCollection('projects', (p) => p.data.featured)).sort(
 </style>
 
 <script>
-  const folders = [...document.querySelectorAll<HTMLButtonElement>('[data-folder]')];
-
-  const select = (folder: HTMLButtonElement | null) =>
-    folders.forEach((f) => f.toggleAttribute('data-selected', f === folder));
-
-  const open = (folder: HTMLButtonElement) =>
-    document.dispatchEvent(
-      new CustomEvent('window:request', { detail: { id: folder.dataset.folderWindow, opener: folder } }),
-    );
-
-  folders.forEach((folder) => {
-    folder.addEventListener('click', () => select(folder));
-    folder.addEventListener('dblclick', () => open(folder));
-    folder.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        select(folder);
-        open(folder);
-      }
-    });
-    folder.addEventListener('focus', () => select(folder));
-  });
-
-  // Clicking anywhere else clears the selection
-  document.addEventListener('pointerdown', (e) => {
-    if (!(e.target as HTMLElement).closest('[data-folder]')) select(null);
-  });
+  // Click selects, double-click or Enter opens (shared with Finder and folder windows)
+  import { initSelection } from '../../scripts/selection';
+  initSelection();
 </script>

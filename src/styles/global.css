@@ -41,7 +41,8 @@ a {
   height: 100%;
   overflow: hidden;
   padding: var(--widget-pad);
-  background: var(--color-widget-bg);
+  background: var(--widget-surface);
+  border: var(--border-hairline) solid var(--color-widget-border);
   border-radius: var(--radius-widget);
   box-shadow: var(--shadow-widget);
 }

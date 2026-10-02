@@ -9,6 +9,7 @@ import DesktopFolders from './DesktopFolders.astro';
 import Dock from './Dock.astro';
 import HomeScreen from './HomeScreen.astro';
 import WindowLayer from '../windows/WindowLayer.astro';
+import IconDefs from '../icons/IconDefs.astro';
 
 interface Props {
   /** Window to open on load, from the URL (see src/pages/[app].astro) */
@@ -28,6 +29,7 @@ const [p1, p2, p3, p4] = desktopConfig.photos;
     <html data-loader="done"> is already set.
 -->
 <div class="desktop">
+  <IconDefs />
   <div class="desktop__wallpaper" data-anim="wallpaper" style={`--wallpaper: url('${desktopConfig.wallpaper}')`}>
   </div>
 

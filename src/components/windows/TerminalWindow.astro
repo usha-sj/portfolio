@@ -1,6 +1,7 @@
 ---
 // Terminal window content (placeholder). Fill this in later; the chrome comes from Window.astro.
-// To run JS when this window opens, listen for 'window:open' where detail.id === 'terminal'.
+// To run JS when this window opens: add a module in src/scripts/ that listens for 'window:open'
+// where detail.id === 'terminal', and start it from WindowLayer.astro (no <script> in this file).
 import { windowText } from '../../config/apps';
 
 const text = windowText.terminal;

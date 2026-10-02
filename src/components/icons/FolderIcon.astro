@@ -1,5 +1,6 @@
 ---
-// Original scrapbook folder: kraft-paper folder, a sheet peeking out, a round sticker.
+// macOS-shaped folder (tab, back, front panel with a soft gradient) in the site's ink blue.
+// Gradients live in IconDefs.astro.
 interface Props {
   class?: string;
 }
@@ -7,15 +8,15 @@ const { class: className } = Astro.props;
 ---
 
 <svg class:list={['folder-icon', className]} viewBox="0 0 64 52" aria-hidden="true">
-  <!-- back panel with tab -->
-  <path class="folder-icon__back" d="M4 8a3 3 0 0 1 3-3h15l5 5h30a3 3 0 0 1 3 3v33a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" />
-  <!-- paper sticking out, slightly askew -->
-  <rect class="folder-icon__paper" x="12" y="11" width="38" height="24" rx="1.5" transform="rotate(-4 31 23)" />
-  <path class="folder-icon__lines" d="M17 18h20M17 22h26" transform="rotate(-4 31 23)" />
-  <!-- front panel -->
-  <path class="folder-icon__front" d="M2 21a3 3 0 0 1 3-3h54a3 3 0 0 1 3 3l-2 24a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" />
-  <!-- sticker -->
-  <circle class="folder-icon__sticker" cx="48" cy="38" r="5" />
+  <path
+    class="folder-icon__back"
+    d="M3 7.5A3.5 3.5 0 0 1 6.5 4h16.2a3.5 3.5 0 0 1 2.6 1.2l2.6 2.8h29.6A3.5 3.5 0 0 1 61 11.5v34a3.5 3.5 0 0 1-3.5 3.5h-51A3.5 3.5 0 0 1 3 45.5z"
+  />
+  <path
+    class="folder-icon__front"
+    d="M3 17.5A3.5 3.5 0 0 1 6.5 14h51a3.5 3.5 0 0 1 3.5 3.5v28a3.5 3.5 0 0 1-3.5 3.5h-51A3.5 3.5 0 0 1 3 45.5z"
+  />
+  <path class="folder-icon__crease" d="M6 15.2h52" />
 </svg>
 
 <style>
@@ -23,11 +24,10 @@ const { class: className } = Astro.props;
     display: block;
     width: 100%;
     height: auto;
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.18));
   }
 
-  .folder-icon__back    { fill: var(--color-folder-back); }
-  .folder-icon__paper   { fill: var(--color-folder-paper); }
-  .folder-icon__lines   { stroke: var(--color-folder-back); stroke-width: 1.2; stroke-linecap: round; }
-  .folder-icon__front   { fill: var(--color-folder-front); }
-  .folder-icon__sticker { fill: var(--color-folder-sticker); }
+  .folder-icon__back { fill: url(#grad-folder-back); }
+  .folder-icon__front { fill: url(#grad-folder-front); }
+  .folder-icon__crease { stroke: var(--color-folder-crease); stroke-width: 1; stroke-linecap: round; }
 </style>

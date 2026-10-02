@@ -25,11 +25,11 @@ const t = windowText.finder;
   </nav>
 
   <div class="finder__main">
-    <ul class="finder__grid" data-finder-list>
+    <ul class="finder__grid" data-finder-list data-select-group>
       {
         projects.map((p) => (
           <li data-order={p.data.order} data-year={p.data.year}>
-            <button type="button" class="finder__item" data-open-window={`project/${p.id}`}>
+            <button type="button" class="finder__item" data-select-open={`project/${p.id}`} aria-describedby="select-open-hint">
               <FolderIcon class="finder__icon" />
               <span class="finder__name">{p.data.title}</span>
               <span class="finder__meta">{p.data.year}</span>
@@ -38,7 +38,7 @@ const t = windowText.finder;
         ))
       }
     </ul>
-    <p class="finder__status">{t.countLabel.replace('{n}', String(projects.length))}</p>
+    <p class="finder__status">{projects.length === 1 ? t.countLabelOne : t.countLabel.replace('{n}', String(projects.length))}</p>
   </div>
 </div>
 
@@ -91,7 +91,7 @@ const t = windowText.finder;
 
   .finder__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(var(--folder-label-w), 1fr));
     gap: var(--space-4);
     flex: 1;
     align-content: start;
@@ -116,9 +116,18 @@ const t = windowText.finder;
     cursor: pointer;
   }
 
-  .finder__item:hover,
-  .finder__item:focus-visible {
+  .finder__item[data-selected] {
     background: var(--color-finder-selected);
+  }
+
+  .finder__item[data-selected] .finder__name {
+    background: var(--color-folder-label-selected-bg);
+    color: var(--color-folder-label-selected-text);
+  }
+
+  .finder__item:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
   }
 
   .finder__item :global(.finder__icon) {
@@ -126,6 +135,8 @@ const t = windowText.finder;
   }
 
   .finder__name {
+    padding: 1px var(--space-1);
+    border-radius: var(--radius-sm);
     font-weight: 500;
   }
 
@@ -159,27 +170,3 @@ const t = windowText.finder;
     }
   }
 </style>
-
-<script>
-  // Window content is cloned from a <template> each time it opens, so wire it up on open.
-  document.addEventListener('window:open', (e) => {
-    const { id, el } = (e as CustomEvent<{ id: string; el: HTMLElement }>).detail;
-    if (id !== 'finder') return;
-
-    const list = el.querySelector<HTMLElement>('[data-finder-list]')!;
-    const buttons = [...el.querySelectorAll<HTMLButtonElement>('[data-finder-view]')];
-    const items = [...list.children] as HTMLElement[];
-
-    const show = (view: string) => {
-      const sorted = [...items].sort((a, b) =>
-        view === 'recents'
-          ? Number(b.dataset.year) - Number(a.dataset.year)
-          : Number(a.dataset.order) - Number(b.dataset.order),
-      );
-      list.replaceChildren(...sorted);
-      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.finderView === view)));
-    };
-
-    buttons.forEach((b) => b.addEventListener('click', () => show(b.dataset.finderView!)));
-  });
-</script>

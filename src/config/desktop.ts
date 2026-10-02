@@ -28,7 +28,7 @@ export const desktopConfig = {
 
   folders: {
     label: 'Project folders',
-    // Screen-reader hint for desktop folders
+    // Screen-reader hint for every click-to-select, double-click-to-open icon
     hint: 'Press Enter or double-click to open.',
   },
 

@@ -2,7 +2,7 @@
 // Holds every window: the chrome template, one content template per app/project,
 // and the layer windows are placed in. The manager lives in src/scripts/windows.ts.
 import { getCollection } from 'astro:content';
-import { apps, projectApp } from '../../config/apps';
+import { apps, projectApp, projectFileApp } from '../../config/apps';
 import { siteConfig } from '../../config/site';
 import Window from './Window.astro';
 import FinderWindow from './FinderWindow.astro';
@@ -11,7 +11,8 @@ import PreviewWindow from './PreviewWindow.astro';
 import MailWindow from './MailWindow.astro';
 import TerminalWindow from './TerminalWindow.astro';
 import TrashWindow from './TrashWindow.astro';
-import ProjectWindow from './ProjectWindow.astro';
+import ProjectFolderWindow from './ProjectFolderWindow.astro';
+import ProjectTextWindow from './ProjectTextWindow.astro';
 
 interface Props {
   /** Window to open on page load (from the URL), e.g. 'notes' or 'project/foo' */
@@ -50,16 +51,30 @@ const appTemplates = [
 
 {
   projects.map((project) => (
-    <template
-      data-window-template={`project/${project.id}`}
-      data-app="finder"
-      data-app-label={projectApp.label}
-      data-title={project.data.title}
-      data-path={`${projectApp.pathPrefix}${project.id}`}
-      data-size={projectApp.size}
-    >
-      <ProjectWindow project={project} />
-    </template>
+    <>
+      {/* The project folder (Finder window) */}
+      <template
+        data-window-template={`project/${project.id}`}
+        data-app="finder"
+        data-app-label={projectApp.label}
+        data-title={project.data.title}
+        data-path={`${projectApp.pathPrefix}${project.id}`}
+        data-size={projectApp.size}
+      >
+        <ProjectFolderWindow project={project} />
+      </template>
+      {/* <slug>.txt inside it (TextEdit window) */}
+      <template
+        data-window-template={`project/${project.id}${projectFileApp.pathSuffix}`}
+        data-app={projectFileApp.id}
+        data-app-label={projectFileApp.label}
+        data-title={projectFileApp.fileName.replace('{slug}', project.id)}
+        data-path={`${projectApp.pathPrefix}${project.id}${projectFileApp.pathSuffix}`}
+        data-size={projectFileApp.size}
+      >
+        <ProjectTextWindow project={project} />
+      </template>
+    </>
   ))
 }
 
@@ -76,7 +91,19 @@ const appTemplates = [
   }
 </style>
 
+<!--
+  Window content scripts are started here, NOT inside the window components:
+  those components render inside <template>, where a <script> doesn't run until the
+  window is cloned (and an inline one re-runs on every open). Content scripts listen
+  for 'window:open' / 'window:close' and set up each new copy.
+-->
 <script>
+  import { initFinder } from '../../scripts/finder';
+  import { initResume } from '../../scripts/resume';
   import { initWindowManager } from '../../scripts/windows';
+
+  // Content listeners first, so they catch the window opened from the URL
+  initFinder();
+  initResume();
   initWindowManager();
 </script>

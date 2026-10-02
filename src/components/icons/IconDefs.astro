@@ -1,0 +1,35 @@
+---
+// Shared SVG gradients for icons, rendered once per page. Icons reference them with
+// fill="url(#...)". Kept in a 0×0 (not display:none) SVG so the gradients always resolve,
+// including inside windows cloned from templates. Colours come from tokens.css.
+---
+
+<svg class="icon-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="grad-folder-back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color: var(--color-folder-back-top)" />
+      <stop offset="1" style="stop-color: var(--color-folder-back-bottom)" />
+    </linearGradient>
+    <linearGradient id="grad-folder-front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color: var(--color-folder-front-top)" />
+      <stop offset="1" style="stop-color: var(--color-folder-front-bottom)" />
+    </linearGradient>
+    <linearGradient id="grad-notes-band" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color: var(--color-icon-notes-band-top)" />
+      <stop offset="1" style="stop-color: var(--color-icon-notes-band-bottom)" />
+    </linearGradient>
+    <linearGradient id="grad-trash" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" style="stop-color: var(--color-icon-trash-top)" />
+      <stop offset="1" style="stop-color: var(--color-icon-trash-bottom)" />
+    </linearGradient>
+  </defs>
+</svg>
+
+<style>
+  .icon-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+</style>
