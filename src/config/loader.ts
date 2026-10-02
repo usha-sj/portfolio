@@ -3,6 +3,8 @@
 export const loaderConfig = {
   // sessionStorage key used to show the loader once per browser session
   storageKey: 'usha-loader-seen',
+  // sessionStorage key for the visitor's name (read by the desktop sticky note)
+  usernameKey: 'usha-visitor-name',
 
   // Shown before each prompt line
   host: 'usha@portfolio',

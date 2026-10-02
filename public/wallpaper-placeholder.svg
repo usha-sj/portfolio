@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <!-- Placeholder wallpaper: flat oat paper with fine grain. Replace via desktopConfig.wallpaper. -->
+  <filter id="grain">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0 0.2  0 0 0 0.09 0"/>
+  </filter>
+  <rect width="100%" height="100%" fill="#e8dcc6"/>
+  <rect width="100%" height="100%" filter="url(#grain)"/>
+</svg>

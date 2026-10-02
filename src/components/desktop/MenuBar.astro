@@ -1,0 +1,296 @@
+---
+import { desktopConfig } from '../../config/desktop';
+
+const { name, profileLinks, items } = desktopConfig.menuBar;
+---
+
+<header class="menubar" data-anim="menubar">
+  <nav class="menubar__nav" aria-label="Main">
+    <div class="menu" data-menu>
+      <button
+        type="button"
+        class="menubar__item menubar__name"
+        id="profile-menu-button"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="profile-menu"
+      >
+        {name}
+      </button>
+      <ul class="menu__list" id="profile-menu" role="menu" aria-labelledby="profile-menu-button" tabindex="-1" hidden>
+        {
+          profileLinks.map((link) => (
+            <li role="none">
+              <a
+                class="menu__link"
+                role="menuitem"
+                tabindex="-1"
+                href={link.href}
+                {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <ul class="menubar__items">
+      {
+        items.map((item) => (
+          <li>
+            <a class="menubar__item" href={item.href}>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="menubar__status">
+    <!-- Decorative status icons, like the macOS menu bar -->
+    <svg class="menubar__icon" viewBox="0 0 20 14" aria-hidden="true">
+      <path d="M10 12.5 7.6 10a3.4 3.4 0 0 1 4.8 0z" />
+      <path d="M4.9 7.3a7.3 7.3 0 0 1 10.2 0l-1.3 1.3a5.4 5.4 0 0 0-7.6 0z" />
+      <path d="M2.2 4.6a11.1 11.1 0 0 1 15.6 0l-1.3 1.3a9.2 9.2 0 0 0-13 0z" />
+    </svg>
+    <svg class="menubar__icon menubar__icon--battery" viewBox="0 0 27 13" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity="0.45" />
+      <rect x="2" y="2" width="15" height="9" rx="2" />
+      <path d="M25 4.5v4a2 2 0 0 0 0-4z" opacity="0.45" />
+    </svg>
+    <!-- Visitor's local time, like the real macOS menu bar. Filled in by JS. -->
+    <time class="menubar__clock" data-menubar-clock></time>
+  </div>
+</header>
+
+<style>
+  .menubar {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: var(--z-menubar);
+    height: var(--menubar-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-3);
+    /* See-through like macOS: the wallpaper shows through, blurred */
+    background: var(--color-menubar-bg);
+    -webkit-backdrop-filter: var(--menubar-blur);
+    backdrop-filter: var(--menubar-blur);
+    border-bottom: var(--border-thin) solid var(--color-menubar-border);
+    font-size: var(--text-menubar);
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .menubar__nav,
+  .menubar__items {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .menubar__items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .menubar__item {
+    display: block;
+    padding: 2px var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .menubar__item:hover,
+  .menubar__name[aria-expanded='true'] {
+    background: var(--color-menu-hover-bg);
+    color: var(--color-menu-hover-text);
+  }
+
+  .menubar__name {
+    font-weight: 700;
+  }
+
+  .menu {
+    position: relative;
+  }
+
+  .menu__list {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0;
+    z-index: var(--z-menu);
+    min-width: 13rem;
+    margin: 0;
+    padding: var(--space-1);
+    list-style: none;
+    background: var(--color-menu-bg);
+    -webkit-backdrop-filter: var(--menubar-blur);
+    backdrop-filter: var(--menubar-blur);
+    border: var(--border-thin) solid var(--color-menu-border);
+    border-radius: var(--radius-menu);
+    box-shadow: var(--shadow-menu);
+  }
+
+  .menu__list[hidden] {
+    display: none;
+  }
+
+  .menu__link {
+    display: block;
+    padding: 3px var(--space-3);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+  }
+
+  /* One highlight only: hover moves focus (see script), so style focus alone */
+  .menu__list:focus {
+    outline: none;
+  }
+
+  .menu__link:focus {
+    outline: none;
+    background: var(--color-menu-hover-bg);
+    color: var(--color-menu-hover-text);
+  }
+
+  .menubar__status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding-right: var(--space-1);
+  }
+
+  .menubar__icon {
+    width: 17px;
+    height: 13px;
+    fill: currentColor;
+  }
+
+  .menubar__icon--battery {
+    width: 24px;
+  }
+
+  .menubar__clock {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .menubar__items,
+    .menubar__icon {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { everyMinute } from '../../scripts/everyMinute';
+
+  // ---- Local clock ----
+  const clock = document.querySelector<HTMLTimeElement>('[data-menubar-clock]');
+  if (clock) {
+    const dateFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+    everyMinute(() => {
+      const now = new Date();
+      clock.textContent = `${dateFmt.format(now).replace(/,/g, '')}  ${timeFmt.format(now)}`;
+      clock.dateTime = now.toISOString();
+    });
+  }
+
+  // ---- "Usha" dropdown ----
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+  if (menu) {
+    const button = menu.querySelector<HTMLButtonElement>('button')!;
+    const list = menu.querySelector<HTMLUListElement>('[role="menu"]')!;
+    const items = [...list.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]')];
+
+    const isOpen = () => button.getAttribute('aria-expanded') === 'true';
+
+    // focusIndex null: open with nothing highlighted (mouse), like macOS
+    const open = (focusIndex: number | null = 0) => {
+      button.setAttribute('aria-expanded', 'true');
+      list.hidden = false;
+      if (focusIndex === null) list.focus();
+      else items.at(focusIndex)?.focus();
+    };
+
+    const close = (returnFocus = false) => {
+      if (!isOpen()) return;
+      button.setAttribute('aria-expanded', 'false');
+      list.hidden = true;
+      if (returnFocus) button.focus();
+    };
+
+    // e.detail is 0 for keyboard-triggered clicks (Enter / Space)
+    button.addEventListener('click', (e) => (isOpen() ? close() : open(e.detail === 0 ? 0 : null)));
+
+    // Hover moves the highlight, so mouse and keyboard never highlight two items
+    items.forEach((item) => item.addEventListener('pointerenter', () => item.focus()));
+    list.addEventListener('pointerleave', () => {
+      if (isOpen()) list.focus();
+    });
+
+    button.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        open(0);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        open(-1);
+      }
+    });
+
+    list.addEventListener('keydown', (e) => {
+      const i = items.indexOf(document.activeElement as HTMLAnchorElement);
+      const focus = (n: number) => items[(n + items.length) % items.length].focus();
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          focus(i + 1);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          focus(i < 0 ? -1 : i - 1);
+          break;
+        case 'Home':
+          e.preventDefault();
+          focus(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          focus(-1);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          close(true);
+          break;
+        case 'Tab':
+          close();
+          break;
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener('pointerdown', (e) => {
+      if (!menu.contains(e.target as Node)) close();
+    });
+
+    // Close after choosing an item
+    list.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[role="menuitem"]')) close();
+    });
+  }
+</script>

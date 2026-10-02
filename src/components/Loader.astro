@@ -39,11 +39,11 @@ import { loaderConfig } from '../config/loader';
     display: none;
     position: fixed;
     inset: 0;
-    z-index: 9999;
-    background: #000;
-    color: #d8d8d8;
-    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-    font-size: 15px;
+    z-index: var(--z-loader);
+    background: var(--color-term-bg);
+    color: var(--color-term-text);
+    font-family: var(--font-mono);
+    font-size: var(--text-term);
     line-height: 1.6;
     overflow-y: auto;
   }
@@ -58,7 +58,7 @@ import { loaderConfig } from '../config/loader';
 
   .loader__screen {
     min-height: 100%;
-    padding: 3rem 1.25rem 4rem;
+    padding: var(--space-12) var(--space-5) var(--space-16);
     cursor: text;
   }
 
@@ -71,12 +71,12 @@ import { loaderConfig } from '../config/loader';
   }
 
   .loader__host {
-    color: #7ee787;
+    color: var(--color-term-accent);
   }
 
   .loader__host::after {
     content: ':~$ ';
-    color: #d8d8d8;
+    color: var(--color-term-text);
   }
 
   .loader__prompt {
@@ -97,7 +97,7 @@ import { loaderConfig } from '../config/loader';
     inset: 0;
     width: 100%;
     opacity: 0;
-    font-size: 16px;
+    font-size: var(--text-input-min);
     border: 0;
     padding: 0;
     background: transparent;
@@ -109,20 +109,20 @@ import { loaderConfig } from '../config/loader';
     width: 0.6em;
     height: 1.1em;
     vertical-align: text-bottom;
-    background: #d8d8d8;
+    background: var(--color-term-text);
     animation: loader-blink 1s steps(1) infinite;
   }
 
   .loader__skip {
     position: fixed;
-    top: 1rem;
-    right: 1.25rem;
+    top: var(--space-4);
+    right: var(--space-5);
     z-index: 1;
     font: inherit;
-    color: #8b8b8b;
+    color: var(--color-term-muted);
     background: none;
     border: 0;
-    padding: 0.25rem;
+    padding: var(--space-1);
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -130,7 +130,7 @@ import { loaderConfig } from '../config/loader';
 
   .loader__skip:hover,
   .loader__skip:focus-visible {
-    color: #fff;
+    color: var(--color-term-hover);
   }
 
   @keyframes loader-blink {
@@ -156,6 +156,16 @@ import { loaderConfig } from '../config/loader';
   function onLoaderComplete(overlay: HTMLElement) {
     overlay.style.display = 'none';
     document.documentElement.classList.remove('loader-active');
+    markDesktopReady();
+  }
+
+  /**
+   * Single "desktop is visible" signal for GSAP intros, fired whether or not the
+   * loader ran this session. Check <html data-loader="done"> too, in case your
+   * listener is registered after the event has already fired.
+   */
+  function markDesktopReady() {
+    document.documentElement.dataset.loader = 'done';
     document.dispatchEvent(new CustomEvent('loader:complete'));
   }
 
@@ -168,6 +178,8 @@ import { loaderConfig } from '../config/loader';
 
   if (overlay && document.documentElement.classList.contains('loader-active')) {
     run(overlay);
+  } else {
+    markDesktopReady();
   }
 
   function run(overlay: HTMLElement) {
@@ -284,6 +296,9 @@ import { loaderConfig } from '../config/loader';
       if (done) return;
 
       const { name, line } = respond(username, password);
+      try {
+        sessionStorage.setItem(cfg.usernameKey, name);
+      } catch {}
       await typeLine(cfg.welcome.replace('{name}', name), TEXT_CHAR_MS);
       if (done) return;
       await typeLine(line, TEXT_CHAR_MS);

@@ -1,0 +1,44 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  caption: string;
+}
+
+const { src, alt, caption } = Astro.props;
+---
+
+<!-- Photo widget: the image fills the whole tile, like the macOS Photos widget. -->
+<figure class="widget photo">
+  {
+    src ? (
+      <img class="photo__img" src={src} alt={alt} loading="lazy" decoding="async" />
+    ) : (
+      <div class="photo__img photo__empty" role="img" aria-label={`Empty photo frame: ${caption}`}>
+        <span>{caption}</span>
+      </div>
+    )
+  }
+</figure>
+
+<style>
+  .photo {
+    margin: 0;
+    padding: 0;
+  }
+
+  .photo__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo__empty {
+    display: grid;
+    place-items: center;
+    background: var(--color-photo-empty);
+    color: var(--color-photo-empty-text);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+</style>

@@ -1,0 +1,126 @@
+---
+import { desktopConfig } from '../../../config/desktop';
+
+const { timeZone, weekdays } = desktopConfig.calendar;
+---
+
+<!-- Built in JS so a cached page never shows a stale month. -->
+<article class="widget calendar" data-calendar data-tz={timeZone} aria-labelledby="calendar-title">
+  <h2 class="calendar__title" id="calendar-title" data-calendar-title></h2>
+  <table class="calendar__grid">
+    <thead>
+      <tr>{weekdays.map((d) => <th scope="col" abbr={d}>{d}</th>)}</tr>
+    </thead>
+    <tbody data-calendar-body></tbody>
+  </table>
+</article>
+
+<style>
+  /* Everything inside is sized in em off this, so the grid fits the tile */
+  .calendar {
+    display: flex;
+    flex-direction: column;
+    font-size: calc(var(--widget-unit) * 0.066);
+  }
+
+  .calendar__title {
+    margin: 0 0 0.4em 0.25em;
+    font-family: var(--font-body);
+    font-size: 1.15em;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+  }
+
+  .calendar__grid {
+    width: 100%;
+    flex: 1;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .calendar__grid th {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--color-text-muted);
+  }
+
+  /* Cells are created in JS, so they don't get Astro's scoped attribute */
+  .calendar__grid :global(td) {
+    padding: 0;
+    line-height: 1;
+  }
+
+  .calendar__grid :global(td span) {
+    display: inline-grid;
+    place-items: center;
+    width: 1.7em;
+    height: 1.7em;
+    border-radius: 50%;
+  }
+
+  .calendar__grid :global(td[aria-current='date'] span) {
+    background: var(--color-accent);
+    color: var(--color-paper);
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-calendar]');
+  if (root) {
+    const timeZone = root.dataset.tz!;
+    const title = root.querySelector<HTMLElement>('[data-calendar-title]')!;
+    const body = root.querySelector<HTMLElement>('[data-calendar-body]')!;
+
+    const render = () => {
+      // Today's date in the configured zone, not the visitor's
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      }).formatToParts(new Date());
+      const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+      const year = get('year');
+      const month = get('month') - 1;
+      const today = get('day');
+
+      const firstWeekday = new Date(Date.UTC(year, month, 1)).getUTCDay();
+      const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+
+      title.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', timeZone: 'UTC' }).format(
+        new Date(Date.UTC(year, month, 1)),
+      );
+
+      body.replaceChildren();
+      let row = document.createElement('tr');
+      for (let i = 0; i < firstWeekday; i++) row.appendChild(document.createElement('td'));
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement('td');
+        const num = document.createElement('span');
+        num.textContent = String(day);
+        cell.appendChild(num);
+        if (day === today) cell.setAttribute('aria-current', 'date');
+        row.appendChild(cell);
+        if (row.children.length === 7) {
+          body.appendChild(row);
+          row = document.createElement('tr');
+        }
+      }
+      if (row.children.length) body.appendChild(row);
+    };
+
+    render();
+    // Catch midnight rollovers on a tab left open
+    setInterval(render, 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') render();
+    });
+  }
+</script>

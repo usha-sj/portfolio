@@ -1,0 +1,61 @@
+---
+import { desktopConfig } from '../../../config/desktop';
+import { loaderConfig } from '../../../config/loader';
+
+const { greeting, body, signoff, guestName } = desktopConfig.sticky;
+const [before, after] = greeting.split('{name}');
+---
+
+<aside class="widget sticky" data-sticky data-key={loaderConfig.usernameKey} data-guest={guestName}>
+  <p class="sticky__greeting">{before}<span data-sticky-name>{guestName}</span>{after}</p>
+  <p class="sticky__body">{body}</p>
+  <p class="sticky__signoff">{signoff}</p>
+</aside>
+
+<style>
+  .sticky {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-sticky);
+    color: var(--color-sticky-text);
+    font-family: var(--font-hand);
+    font-size: var(--text-lg);
+    line-height: 1.15;
+  }
+
+  .sticky p {
+    margin: 0;
+  }
+
+  .sticky__greeting {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .sticky .sticky__body {
+    margin-top: var(--space-1);
+  }
+
+  .sticky .sticky__signoff {
+    margin-top: auto;
+    text-align: right;
+  }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-sticky]');
+  if (root) {
+    const nameEl = root.querySelector<HTMLElement>('[data-sticky-name]')!;
+    const update = () => {
+      let name = '';
+      try {
+        name = sessionStorage.getItem(root.dataset.key!) ?? '';
+      } catch {}
+      nameEl.textContent = name || root.dataset.guest!;
+    };
+    update();
+    // The visitor logs in on this same page, so refresh once the loader finishes
+    document.addEventListener('loader:complete', update);
+  }
+</script>

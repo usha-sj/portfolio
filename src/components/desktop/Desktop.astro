@@ -1,0 +1,117 @@
+---
+import { desktopConfig } from '../../config/desktop';
+import MenuBar from './MenuBar.astro';
+import ClockWidget from './widgets/ClockWidget.astro';
+import CalendarWidget from './widgets/CalendarWidget.astro';
+import PhotoWidget from './widgets/PhotoWidget.astro';
+import StickyNote from './widgets/StickyNote.astro';
+
+const [p1, p2, p3, p4] = desktopConfig.photos;
+---
+
+<!--
+  GSAP hooks:
+    [data-anim="wallpaper"], [data-anim="menubar"], [data-anim="widget"]
+    Each widget has data-widget="<name>" for targeting individually.
+    Start intros on the `loader:complete` event, or immediately if
+    <html data-loader="done"> is already set.
+-->
+<div class="desktop">
+  <div class="desktop__wallpaper" data-anim="wallpaper" style={`--wallpaper: url('${desktopConfig.wallpaper}')`}>
+  </div>
+
+  <MenuBar />
+
+  <main class="desktop__widgets" aria-label="Desktop widgets">
+    <div class="slot slot--clock" data-anim="widget" data-widget="clock">
+      <ClockWidget />
+    </div>
+    <div class="slot slot--calendar" data-anim="widget" data-widget="calendar">
+      <CalendarWidget />
+    </div>
+    <div class="slot slot--photo1" data-anim="widget" data-widget="photo-1">
+      <PhotoWidget {...p1} />
+    </div>
+    <div class="slot slot--sticky" data-anim="widget" data-widget="sticky">
+      <StickyNote />
+    </div>
+    <div class="slot slot--photo2" data-anim="widget" data-widget="photo-2">
+      <PhotoWidget {...p2} />
+    </div>
+    <div class="slot slot--photo3" data-anim="widget" data-widget="photo-3">
+      <PhotoWidget {...p3} />
+    </div>
+    <div class="slot slot--photo4" data-anim="widget" data-widget="photo-4">
+      <PhotoWidget {...p4} />
+    </div>
+  </main>
+
+  <!-- Next step: folder icons go in the right-hand column (--folder-col-w),
+       the dock in the bottom strip (--dock-h). -->
+</div>
+
+<style>
+  .desktop {
+    position: relative;
+    min-height: 100dvh;
+  }
+
+  .desktop__wallpaper {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-wallpaper);
+    background: var(--color-bg) var(--wallpaper) center / cover no-repeat;
+  }
+
+  /*
+    Widgets snap to a grid of square units in the top-left, like macOS.
+    The unit shrinks on short screens so three rows fit above the dock.
+    Rearrange by editing grid-template-areas.
+  */
+  .desktop__widgets {
+    --widget-unit: clamp(
+      var(--widget-unit-min),
+      calc((100dvh - var(--menubar-h) - var(--dock-h) - 2 * var(--desktop-pad) - 2 * var(--widget-gap)) / 3),
+      var(--widget-unit-max)
+    );
+
+    position: relative;
+    z-index: var(--z-widgets);
+    display: grid;
+    grid-template-columns: repeat(4, var(--widget-unit));
+    grid-auto-rows: var(--widget-unit);
+    grid-template-areas:
+      'clock  calendar photo1 photo1'
+      'sticky photo2   photo1 photo1'
+      'photo3 photo3   photo4 .';
+    gap: var(--widget-gap);
+    width: max-content;
+    padding: calc(var(--menubar-h) + var(--desktop-pad)) var(--desktop-pad) calc(var(--dock-h) + var(--desktop-pad));
+  }
+
+  .slot--clock    { grid-area: clock; }
+  .slot--calendar { grid-area: calendar; }
+  .slot--sticky   { grid-area: sticky; }
+  .slot--photo1   { grid-area: photo1; } /* large 2x2 */
+  .slot--photo2   { grid-area: photo2; }
+  .slot--photo3   { grid-area: photo3; } /* medium 2x1 */
+  .slot--photo4   { grid-area: photo4; }
+
+  /* ---- Phone: two-column home screen ---- */
+  @media (max-width: 767px) {
+    .desktop__widgets {
+      --widget-unit: calc((100vw - 2 * var(--mobile-gutter) - var(--widget-gap)) / 2);
+
+      width: auto;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas:
+        'clock  calendar'
+        'photo1 photo1'
+        'photo1 photo1'
+        'sticky photo2'
+        'photo3 photo3'
+        'photo4 .';
+      padding-inline: var(--mobile-gutter);
+    }
+  }
+</style>
