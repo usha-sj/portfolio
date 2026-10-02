@@ -79,6 +79,6 @@ export const loaderConfig = {
     'Welcome back. Or welcome first time. I don’t keep track.',
   ],
 
-  // Matched case-insensitively as substrings of username or password. Extend as needed.
-  badWords: ['***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***'],
+  // Bad-word list: edit src/config/badwords.local.txt (gitignored), then run
+  // `npm run hash-badwords`. Only hashes are committed (src/config/badwords.hashed.ts).
 };

@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# plain bad-word list (hashed into src/config/badwords.hashed.ts)
+src/config/badwords.local.txt

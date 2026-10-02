@@ -367,6 +367,7 @@ const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionL
 
 <script>
   import { loaderConfig as cfg } from '../config/loader';
+  import { badWordHashes } from '../config/badwords.hashed';
 
   /**
    * Called once when the loader is done (finished, skipped, or Esc).
@@ -503,10 +504,24 @@ const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionL
       if (e.target !== skip && !prompt.hidden) input.focus();
     });
 
-    const hasBadWord = (s: string) => {
-      const lower = s.toLowerCase();
-      return cfg.badWords.some((w) => lower.includes(w));
-    };
+    // Whole-word check against SHA-256 hashes, so the plain list never ships.
+    // crypto.subtle needs a secure context (https or localhost); without it, nothing is flagged.
+    const badHashes = new Set(badWordHashes);
+
+    async function sha256(text: string) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function hasBadWord(s: string) {
+      try {
+        const words = s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+        const hashes = await Promise.all(words.map(sha256));
+        return hashes.some((h) => badHashes.has(h));
+      } catch {
+        return false;
+      }
+    }
 
     const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -554,14 +569,14 @@ const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionL
       };
 
       return new Promise<string>((resolve) => {
-        const onEnter = (e: KeyboardEvent) => {
+        const onEnter = async (e: KeyboardEvent) => {
           if (e.key !== 'Enter') return;
           e.preventDefault();
           input.removeEventListener('input', render);
           input.removeEventListener('keydown', onEnter);
           const value = input.value;
           prompt.hidden = true;
-          const echo = !masked && hasBadWord(value) ? cfg.guestName : mirror.textContent;
+          const echo = !masked && (await hasBadWord(value)) ? cfg.guestName : mirror.textContent;
           printLine(`${cfg.host}:~$ ${promptText}${echo}`);
           resolve(value);
         };
@@ -570,9 +585,9 @@ const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionL
       });
     }
 
-    function respond(username: string, password: string) {
+    async function respond(username: string, password: string) {
       const name = username.trim() || cfg.guestName;
-      if (hasBadWord(username) || hasBadWord(password)) return { name: cfg.guestName, line: cfg.playNice };
+      if ((await hasBadWord(username)) || (await hasBadWord(password))) return { name: cfg.guestName, line: cfg.playNice };
       if (password.toLowerCase() === 'password') return { name, line: cfg.easterEgg };
       const pick = cfg.randomResponses[Math.floor(Math.random() * cfg.randomResponses.length)];
       return { name, line: pick };
@@ -600,7 +615,7 @@ const sessionKeys = Object.keys(cfg.sessionLabels) as (keyof typeof cfg.sessionL
       const password = await ask(cfg.prompts.password, true);
       if (done) return;
 
-      const { name, line } = respond(username, password);
+      const { name, line } = await respond(username, password);
       try {
         sessionStorage.setItem(cfg.usernameKey, name);
       } catch {}
