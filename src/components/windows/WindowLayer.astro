@@ -99,11 +99,13 @@ const appTemplates = [
 -->
 <script>
   import { initFinder } from '../../scripts/finder';
+  import { initNotes } from '../../scripts/notes';
   import { initResume } from '../../scripts/resume';
   import { initWindowManager } from '../../scripts/windows';
 
   // Content listeners first, so they catch the window opened from the URL
   initFinder();
+  initNotes();
   initResume();
   initWindowManager();
 </script>

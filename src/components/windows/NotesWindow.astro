@@ -1,31 +1,494 @@
 ---
-// Notes window content (placeholder). Fill this in later; the chrome comes from Window.astro.
-// To run JS when this window opens: add a module in src/scripts/ that listens for 'window:open'
-// where detail.id === 'notes', and start it from WindowLayer.astro (no <script> in this file).
-import { windowText } from '../../config/apps';
+// Notes (About): macOS Notes-style sidebar + a scrapbook note with draggable stickers.
+// Notes: src/data/notes.ts. Stickers: src/data/stickers.ts.
+// Behaviour (switching, dragging, GSAP) lives in src/scripts/notes.ts, started from
+// WindowLayer.astro. No <script> here: this component renders inside a <template>.
+import { notes, notesUi } from '../../data/notes';
+import { stickers, type Sticker } from '../../data/stickers';
 
-const text = windowText.notes;
+const dateFmt = new Intl.DateTimeFormat(notesUi.dateLocale, {
+  dateStyle: 'long',
+  timeStyle: 'short',
+  timeZone: notesUi.timeZone,
+});
+// ISO strings without an offset are read as Toronto-ish local time; good enough for a label
+const formatDate = (iso: string) => dateFmt.format(new Date(iso));
+const shortDate = (iso: string) =>
+  new Intl.DateTimeFormat(notesUi.dateLocale, { day: 'numeric', month: 'short', timeZone: notesUi.timeZone }).format(
+    new Date(iso),
+  );
+
+const preview = (n: (typeof notes)[number]) => {
+  const first = n.body.find((b) => 'text' in b);
+  return first && 'text' in first ? first.text : '';
+};
+
+// Two sticker layers per note: the top half and bottom half. On desktop both overlay the
+// whole note; on phones they become strips above and below the text.
+const stickersFor = (noteId: string) => {
+  const mine = stickers.filter((s) => s.note === noteId);
+  return { top: mine.filter((s) => s.y < 50), bottom: mine.filter((s) => s.y >= 50) };
+};
+
+const placeholderPaths: Record<string, string> = {
+  star: 'M50 6l12.4 28.6 31 2.8-23.5 20.4 7 30.4L50 72.6 23.1 88.2l7-30.4L6.6 37.4l31-2.8z',
+  heart: 'M50 88S8 62 8 34a21 21 0 0 1 42-6 21 21 0 0 1 42 6c0 28-42 54-42 54z',
+  circle: 'M50 8a42 42 0 1 1 0 84 42 42 0 0 1 0-84z',
+  sparkle: 'M50 4c4 26 20 42 46 46-26 4-42 20-46 46-4-26-20-42-46-46 26-4 42-20 46-46z',
+};
+
+const stickerStyle = (s: Sticker) => `left:${s.x}%;top:${s.y}%;--w:${s.width};--rot:${s.rotation}deg;`;
+
+// Shapes fill with one colour, or a diagonal gradient when the sticker has color2
+const gradientId = (s: Sticker) => `sticker-grad-${s.id}`;
+const fillStyle = (s: Sticker) =>
+  s.placeholder?.color2 ? `--fill: url(#${gradientId(s)})` : `--fill: var(${s.placeholder?.color ?? '--oat-300'})`;
+const labelStyle = (s: Sticker) =>
+  `background: linear-gradient(135deg, var(${s.placeholder?.color ?? '--burgundy-300'}), var(${s.placeholder?.color2 ?? s.placeholder?.color ?? '--burgundy-500'}))`;
 ---
 
-<div class="notes-window">
-  <h3 class="notes-window__heading">{text.heading}</h3>
-  <p class="notes-window__body">{text.body}</p>
+<div class="notes" data-notes>
+  <nav class="notes__sidebar" aria-label={notesUi.sidebarLabel}>
+    <ul class="notes__list">
+      {
+        notes.map((n, i) => (
+          <li>
+            <button
+              type="button"
+              class="notes__tab"
+              data-note-tab={n.id}
+              aria-current={i === 0 ? 'true' : undefined}
+              aria-controls={`note-${n.id}`}
+            >
+              <span class="notes__tab-title">{n.title}</span>
+              <span class="notes__tab-meta">
+                <span>{shortDate(n.updated)}</span> <span class="notes__tab-preview">{preview(n)}</span>
+              </span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="notes__main">
+    <div class="notes__toolbar">
+      <button type="button" class="notes__tidy" data-notes-tidy title={notesUi.tidyUpHint}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" /></svg>
+        {notesUi.tidyUp}
+      </button>
+    </div>
+
+    {
+      notes.map((n, i) => {
+        const { top, bottom } = stickersFor(n.id);
+        const layer = (list: Sticker[], where: 'top' | 'bottom') => (
+          <div class:list={['note__stickers', `note__stickers--${where}`]}>
+            {list.map((s) =>
+              s.kind === 'polaroid' ? (
+                <figure class="sticker sticker--polaroid" data-sticker data-float={s.float ? '' : undefined} style={stickerStyle(s)}>
+                  <div class="sticker__inner" data-sticker-inner>
+                    {s.src ? (
+                      <img class="polaroid__img" src={s.src} alt={s.alt} draggable="false" />
+                    ) : (
+                      <div class="polaroid__img polaroid__img--empty" role="img" aria-label={s.alt} />
+                    )}
+                    {s.caption && <figcaption class="polaroid__caption">{s.caption}</figcaption>}
+                  </div>
+                </figure>
+              ) : (
+                <div
+                  class:list={['sticker', s.kind && `sticker--${s.kind}`]}
+                  data-sticker
+                  data-float={s.float ? '' : undefined}
+                  style={stickerStyle(s)}
+                  aria-hidden={s.alt ? undefined : 'true'}
+                >
+                  <div class="sticker__inner" data-sticker-inner>
+                    {s.kind === 'emoji' ? (
+                      <span class="sticker__emoji">{s.emoji}</span>
+                    ) : s.kind === 'label' ? (
+                      <span class="sticker__label" style={labelStyle(s)}>
+                        {s.text}
+                      </span>
+                    ) : s.src ? (
+                      <img src={s.src} alt={s.alt} draggable="false" />
+                    ) : (
+                      <svg
+                        viewBox={s.placeholder?.shape === 'tape' ? '0 0 100 34' : '0 0 100 100'}
+                        style={fillStyle(s)}
+                      >
+                        {s.placeholder?.color2 && (
+                          <defs>
+                            <linearGradient id={gradientId(s)} x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0" style={`stop-color: var(${s.placeholder.color})`} />
+                              <stop offset="1" style={`stop-color: var(${s.placeholder.color2})`} />
+                            </linearGradient>
+                          </defs>
+                        )}
+                        {s.placeholder?.shape === 'flower' ? (
+                          <>
+                            {[0, 72, 144, 216, 288].map((a) => (
+                              <ellipse cx="50" cy="28" rx="16" ry="24" transform={`rotate(${a} 50 50)`} />
+                            ))}
+                            <circle class="sticker__centre" cx="50" cy="50" r="12" />
+                          </>
+                        ) : s.placeholder?.shape === 'tape' ? (
+                          <path d="M2 4l4-3 4 3 4-3h72l4 3 4-3 4 3v26l-4 3-4-3-4 3H14l-4-3-4 3-4-3z" opacity="0.85" />
+                        ) : (
+                          <path d={placeholderPaths[s.placeholder?.shape ?? 'circle']} />
+                        )}
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        );
+
+        return (
+          <article class="note" id={`note-${n.id}`} data-note={n.id} hidden={i !== 0} aria-labelledby={`note-${n.id}-title`}>
+            <div class="note__paper" data-note-paper>
+              {layer(top, 'top')}
+              <div class="note__text" data-note-text>
+                <p class="note__date">{formatDate(n.updated)}</p>
+                <h3 class="note__title" id={`note-${n.id}-title`}>
+                  {n.title}
+                </h3>
+                {n.body.map((b) => ('heading' in b ? <h4 class="note__heading">{b.heading}</h4> : <p>{b.text}</p>))}
+              </div>
+              {layer(bottom, 'bottom')}
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
 </div>
 
 <style>
-  .notes-window {
-    padding: var(--space-6);
+  .notes {
+    display: grid;
+    grid-template-columns: var(--notes-sidebar-w) minmax(0, 1fr);
+    min-height: 100%;
   }
 
-  .notes-window__heading {
-    margin: 0 0 var(--space-2);
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    font-weight: 400;
+  /* ---- Sidebar (macOS Notes list) ---- */
+  .notes__sidebar {
+    padding: var(--space-2);
+    background: var(--color-notes-sidebar);
+    border-right: var(--border-thin) solid var(--color-window-titlebar-border);
+    font-family: var(--font-system);
   }
 
-  .notes-window__body {
+  .notes__list {
+    display: grid;
+    gap: 2px;
     margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .notes__tab {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: var(--color-text);
+    cursor: default;
+  }
+
+  .notes__tab[aria-current='true'] {
+    background: var(--color-notes-selected);
+  }
+
+  .notes__tab-title {
+    font-size: var(--text-menubar);
+    font-weight: 700;
+  }
+
+  .notes__tab-meta {
+    overflow: hidden;
+    font-size: var(--text-xs);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--color-notes-meta);
+  }
+
+  .notes__tab-preview {
     color: var(--color-text-muted);
+  }
+
+  /* ---- Main ---- */
+  .notes__main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--color-note-paper);
+  }
+
+  .notes__toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-resume-toolbar);
+    -webkit-backdrop-filter: var(--menubar-blur);
+    backdrop-filter: var(--menubar-blur);
+    border-bottom: var(--border-thin) solid var(--color-window-titlebar-border);
+    font-family: var(--font-system);
+    font-size: var(--text-menubar);
+  }
+
+  .notes__tidy {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--chip-pad);
+    border: var(--border-thin) solid var(--color-chip-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-chip-bg);
+    font: inherit;
+    font-weight: 500;
+    color: var(--color-chip-text);
+    cursor: pointer;
+  }
+
+  .notes__tidy svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+  }
+
+  .note {
+    flex: 1;
+    display: flex;
+  }
+
+  .note[hidden] {
+    display: none;
+  }
+
+  /* ---- Paper: ruled lines; text and stickers share one stacking context ---- */
+  .note__paper {
+    position: relative;
+    isolation: isolate;
+    container-type: inline-size; /* sticker sizes + text column scale with the note */
+    flex: 1;
+    min-height: 100%;
+    /* Top padding = one ruled line, so every line of text sits on a rule */
+    padding: var(--note-line-gap) var(--space-6) var(--space-16);
+    background-color: var(--color-note-paper);
+    background-image: var(--note-paper-bg);
+    background-attachment: local;
+  }
+
+  /* Text layer: always readable and selectable, below the stickers */
+  .note__text {
+    position: relative;
+    z-index: 0;
+    max-width: min(var(--note-text-w), var(--note-text-share));
+    margin: 0 auto;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: var(--note-line-gap);
+  }
+
+  .note__text p {
+    margin: 0 0 var(--note-line-gap);
+  }
+
+  .note__text .note__date {
+    margin: 0;
+    font-family: var(--font-system);
+    font-size: var(--text-xs);
+    text-align: center;
+    color: var(--color-notes-meta);
+  }
+
+  .note__title {
+    margin: 0 0 var(--note-line-gap);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 400;
+    line-height: calc(var(--note-line-gap) * 2);
+  }
+
+  .note__heading {
+    margin: 0;
+    font-family: var(--font-hand);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    line-height: var(--note-line-gap);
+    color: var(--color-accent);
+  }
+
+  /* ---- Sticker layers: overlay the note; only stickers catch the pointer ---- */
+  .note__stickers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .sticker {
+    position: absolute;
+    z-index: 1;
+    /* Scales with the note, capped so stickers don't balloon when maximised */
+    --size: min(calc(var(--w) / var(--note-ref-w) * 100cqw), calc(var(--w) * 1px * var(--sticker-max-scale)));
+    width: var(--size);
+    rotate: var(--rot); /* resting tilt; GSAP adds drag tilt on the inner element */
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    filter: var(--sticker-shadow);
+  }
+
+  .sticker:active {
+    cursor: grabbing;
+  }
+
+  .sticker__inner > img,
+  .sticker__inner > svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .sticker svg {
+    fill: var(--fill);
+  }
+
+  .sticker__centre {
+    fill: var(--color-polaroid);
+  }
+
+  /* Emoji: sized from the sticker width so it scales with the note */
+  .sticker__emoji {
+    display: block;
+    font-family: var(--font-emoji);
+    font-size: calc(var(--size) * 0.9);
+    line-height: 1;
+    text-align: center;
+  }
+
+  /* Labels size to their text (--w sets the text size instead) */
+  .sticker--label {
+    width: max-content;
+  }
+
+  /* Label: handwritten pill with a gradient */
+  .sticker__label {
+    display: block;
+    padding: 0.2em 0.7em 0.3em;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-hand);
+    font-size: calc(var(--size) * 0.2);
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    color: var(--color-sticker-label-text);
+  }
+
+  /* Polaroid print of you (a <figure>, so drop the browser's default margins) */
+  .sticker--polaroid {
+    margin: 0;
+  }
+
+  .sticker--polaroid .sticker__inner {
+    padding: var(--space-2) var(--space-2) 0;
+    background: var(--color-polaroid);
+  }
+
+  .polaroid__img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  .polaroid__img--empty {
+    background: var(--color-polaroid-empty);
+  }
+
+  .polaroid__caption {
+    padding: var(--space-1) 0 var(--space-2);
+    font-family: var(--font-hand);
+    font-size: var(--text-base);
+    line-height: 1.1;
+    text-align: center;
+    color: var(--color-ink);
+  }
+
+  /* ---- Phone: list on top, stickers in strips above/below the text ---- */
+  @media (max-width: 767px) {
+    .notes {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .notes__sidebar {
+      overflow-x: auto;
+      border-right: 0;
+      border-bottom: var(--border-thin) solid var(--color-window-titlebar-border);
+    }
+
+    .notes__list {
+      grid-auto-flow: column;
+      grid-auto-columns: max-content;
+    }
+
+    .notes__tab-meta {
+      display: none;
+    }
+
+    /* Stickers can't be dragged on phones, so there's nothing to tidy */
+    .notes__toolbar {
+      display: none;
+    }
+
+    .note__paper {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-4) var(--space-12);
+    }
+
+    .note__text {
+      width: 100%;
+      max-width: none;
+    }
+
+    .note__stickers {
+      position: static;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-around;
+      gap: var(--space-3);
+      pointer-events: auto;
+    }
+
+    .sticker {
+      position: relative;
+      inset: auto !important;
+      --size: calc(var(--w) * 1px * var(--sticker-mobile-scale));
+      cursor: pointer;
+    }
+
+    .sticker--label {
+      width: max-content;
+    }
   }
 </style>

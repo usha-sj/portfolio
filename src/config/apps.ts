@@ -2,7 +2,7 @@
 // Every app that can open a window: dock label, window title, URL and size.
 // Window ids double as dock ids. Project windows are added from the content collection.
 
-export type WindowSize = 'default' | 'small' | 'large';
+export type WindowSize = 'default' | 'small' | 'large' | 'xl';
 
 export interface AppDef {
   id: string;
@@ -16,7 +16,7 @@ export interface AppDef {
 
 export const apps = {
   finder: { id: 'finder', label: 'Finder', title: 'Projects', path: '/projects', size: 'large' },
-  notes: { id: 'notes', label: 'Notes', title: 'About', path: '/about', size: 'default' },
+  notes: { id: 'notes', label: 'Notes', title: 'About', path: '/about', size: 'xl' },
   preview: { id: 'preview', label: 'Preview', title: 'Resume', path: '/resume', size: 'large' },
   mail: { id: 'mail', label: 'Mail', title: 'Contact', path: '/contact', size: 'small' },
   terminal: { id: 'terminal', label: 'Terminal', title: 'Terminal', path: '/terminal', size: 'default' },
@@ -45,10 +45,6 @@ export const projectFileApp = {
 
 // Placeholder window copy. Each window component reads its own section.
 export const windowText = {
-  notes: {
-    heading: 'About',
-    body: 'DRAFT. Placeholder for the About app. Who you are, what you like building, what you’re looking for.',
-  },
   preview: {
     heading: 'Resume',
     body: 'DRAFT. Placeholder for the resume viewer. A PDF preview and download link will live here.',
