@@ -149,7 +149,11 @@ const labelStyle = (s: Sticker) =>
 
         return (
           <article class="note" id={`note-${n.id}`} data-note={n.id} hidden={i !== 0} aria-labelledby={`note-${n.id}-title`}>
-            <div class="note__paper" data-note-paper>
+            <div
+              class:list={['note__paper', n.minLines && 'note__paper--fixed']}
+              data-note-paper
+              style={n.minLines ? `--min-lines: ${n.minLines}` : undefined}
+            >
               {layer(top, 'top')}
               <div class="note__text" data-note-text>
                 <p class="note__date">{formatDate(n.updated)}</p>
@@ -168,14 +172,16 @@ const labelStyle = (s: Sticker) =>
 </div>
 
 <style>
+  /* Fills the window exactly; only the note column scrolls, so the sidebar stays put */
   .notes {
     display: grid;
     grid-template-columns: var(--notes-sidebar-w) minmax(0, 1fr);
-    min-height: 100%;
+    height: 100%;
   }
 
   /* ---- Sidebar (macOS Notes list) ---- */
   .notes__sidebar {
+    overflow-y: auto;
     padding: var(--space-2);
     background: var(--color-notes-sidebar);
     border-right: var(--border-thin) solid var(--color-window-titlebar-border);
@@ -230,6 +236,8 @@ const labelStyle = (s: Sticker) =>
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto; /* the note's own scroll area (Tidy up toolbar sticks to its top) */
     background: var(--color-note-paper);
   }
 
@@ -286,7 +294,8 @@ const labelStyle = (s: Sticker) =>
     isolation: isolate;
     container-type: inline-size; /* sticker sizes + text column scale with the note */
     flex: 1;
-    min-height: 100%;
+    /* At least the window's height, or `minLines` ruled lines if the note sets it */
+    min-height: max(100%, calc(var(--min-lines, 0) * var(--note-line-gap)));
     /* Top padding = one ruled line, so every line of text sits on a rule */
     padding: var(--note-line-gap) var(--space-6) var(--space-16);
     background-color: var(--color-note-paper);
@@ -328,9 +337,10 @@ const labelStyle = (s: Sticker) =>
   .note__heading {
     margin: 0;
     font-family: var(--font-hand);
-    font-size: var(--text-xl);
-    font-weight: 700;
-    line-height: var(--note-line-gap);
+    font-size: var(--text-2xl);
+    font-weight: 400;
+    /* Two ruled lines tall: room for the handwriting's long ascenders/descenders, still on the grid */
+    line-height: calc(var(--note-line-gap) * 2);
     color: var(--color-accent);
   }
 
@@ -339,6 +349,13 @@ const labelStyle = (s: Sticker) =>
     position: absolute;
     inset: 0;
     pointer-events: none;
+  }
+
+  /* Notes with `minLines`: stickers are placed against a fixed height (minLines ruled
+     lines), so they never shift when the window is taller or shorter */
+  .note__paper--fixed .note__stickers {
+    bottom: auto;
+    height: calc(var(--min-lines) * var(--note-line-gap));
   }
 
   .sticker {
@@ -394,8 +411,8 @@ const labelStyle = (s: Sticker) =>
     padding: 0.2em 0.7em 0.3em;
     border-radius: var(--radius-pill);
     font-family: var(--font-hand);
-    font-size: calc(var(--size) * 0.2);
-    font-weight: 700;
+    font-size: calc(var(--size) * 0.26);
+    font-weight: 400;
     line-height: 1.1;
     text-align: center;
     white-space: nowrap;
@@ -426,7 +443,7 @@ const labelStyle = (s: Sticker) =>
   .polaroid__caption {
     padding: var(--space-1) 0 var(--space-2);
     font-family: var(--font-hand);
-    font-size: var(--text-base);
+    font-size: var(--text-lg);
     line-height: 1.1;
     text-align: center;
     color: var(--color-ink);
@@ -436,6 +453,7 @@ const labelStyle = (s: Sticker) =>
   @media (max-width: 767px) {
     .notes {
       grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr); /* tab row stays, note scrolls below it */
     }
 
     .notes__sidebar {
@@ -459,6 +477,7 @@ const labelStyle = (s: Sticker) =>
     }
 
     .note__paper {
+      min-height: 100%; /* stickers live in strips on phones, so no extra room is needed */
       display: flex;
       flex-direction: column;
       gap: var(--space-4);
