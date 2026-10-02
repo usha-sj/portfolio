@@ -18,7 +18,7 @@ export const apps = {
   finder: { id: 'finder', label: 'Finder', title: 'Projects', path: '/projects', size: 'large' },
   notes: { id: 'notes', label: 'Notes', title: 'About', path: '/about', size: 'xl' },
   preview: { id: 'preview', label: 'Preview', title: 'Resume', path: '/resume', size: 'large' },
-  mail: { id: 'mail', label: 'Mail', title: 'Contact', path: '/contact', size: 'small' },
+  mail: { id: 'mail', label: 'Mail', title: 'New Message', path: '/contact', size: 'default' },
   terminal: { id: 'terminal', label: 'Terminal', title: 'Terminal', path: '/terminal', size: 'default' },
   trash: { id: 'trash', label: 'Trash', title: 'Trash', path: '/trash', size: 'small' },
 } satisfies Record<string, AppDef>;
@@ -48,10 +48,6 @@ export const windowText = {
   preview: {
     heading: 'Resume',
     body: 'DRAFT. Placeholder for the resume viewer. A PDF preview and download link will live here.',
-  },
-  mail: {
-    heading: 'Contact',
-    body: 'DRAFT. Placeholder for the contact app. Email, socials, maybe a little form.',
   },
   terminal: {
     heading: 'Terminal',

@@ -98,12 +98,14 @@ const appTemplates = [
   for 'window:open' / 'window:close' and set up each new copy.
 -->
 <script>
+  import { initContact } from '../../scripts/contact';
   import { initFinder } from '../../scripts/finder';
   import { initNotes } from '../../scripts/notes';
   import { initResume } from '../../scripts/resume';
   import { initWindowManager } from '../../scripts/windows';
 
   // Content listeners first, so they catch the window opened from the URL
+  initContact();
   initFinder();
   initNotes();
   initResume();

@@ -1,31 +1,549 @@
 ---
-// Mail window content (placeholder). Fill this in later; the chrome comes from Window.astro.
-// To run JS when this window opens: add a module in src/scripts/ that listens for 'window:open'
-// where detail.id === 'mail', and start it from WindowLayer.astro (no <script> in this file).
-import { windowText } from '../../config/apps';
+// Mail (Contact): a macOS Mail-style compose window that sends through Web3Forms.
+// Text: src/config/contact.ts. Behaviour: src/scripts/contact.ts (started from
+// WindowLayer.astro; no <script> here because this renders inside a <template>).
+import { contactConfig as c } from '../../config/contact';
 
-const text = windowText.mail;
+const key = import.meta.env.PUBLIC_WEB3FORMS_KEY ?? '';
+
+// Original line icons in the spirit of macOS toolbar symbols (not Apple's SF Symbols)
+const toolIcons: Record<string, string> = {
+  reply: 'M9 6 4 11l5 5M4 11h9a6 6 0 0 1 6 6v1',
+  format: '',
+  emoji: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5v1M15 9.5v1',
+  header: 'M4 6h16v12H4zM7 9.5h3M7 12h3M7 14.5h3M12 9.5h5M12 12h5',
+  attach: 'M15.5 7.5 9 14a2 2 0 0 0 3 3l7-7a4 4 0 0 0-6-6l-7.5 7.5a6 6 0 0 0 8.5 8.5L18 16',
+  later: 'M12 20a8 8 0 1 1 8-8M12 8v4l2.5 2.5M16 18h5M18.5 15.5v5',
+};
 ---
 
-<div class="mail-window">
-  <h3 class="mail-window__heading">{text.heading}</h3>
-  <p class="mail-window__body">{text.body}</p>
+<div class="mail" data-mail data-key={key} data-subject-prefix={c.subjectPrefix} data-from-name={c.fromName}>
+  <form class="mail__form" data-mail-form novalidate>
+    <!-- Toolbar -->
+    <div class="mail__toolbar">
+      <!-- Decorative: hidden from screen readers and skipped by Tab -->
+      <div class="mail__tools" aria-hidden="true">
+        {
+          c.tools.map((t) => (
+            <span class="mail__tool-wrap">
+              <button type="button" class="mail__tool" tabindex="-1" title={t.label}>
+                {t.id === 'format' ? (
+                  <span class="mail__tool-text" aria-hidden="true">Aa</span>
+                ) : (
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={toolIcons[t.id]} />
+                  </svg>
+                )}
+              </button>
+              <span class="mail__tooltip">{c.notInDemo}</span>
+            </span>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- Everything below the toolbar flies away on send -->
+    <div class="mail__compose" data-mail-compose>
+      <!-- To (locked) -->
+      <div class="mail__row">
+        <span class="mail__label" id="mail-to-label">{c.labels.to}</span>
+        <div class="mail__value" aria-labelledby="mail-to-label">
+          <span class="mail__chip">{c.to.name} – {c.to.email}</span>
+          <button type="button" class="mail__copy" data-mail-copy data-email={c.to.email} data-copied={c.copied} data-failed={c.copyFailed}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h10v11H9zM5 15V4h10" /></svg>
+            <span data-mail-copy-label>{c.copyEmail}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- From: name + email -->
+      <div class="mail__row">
+        <span class="mail__label" aria-hidden="true">{c.labels.from}</span>
+        <div class="mail__value mail__value--from">
+          <div class="mail__field">
+            <label class="visually-hidden" for="mail-name">{c.labels.name}</label>
+            <input
+              class="mail__input"
+              id="mail-name"
+              name="name"
+              type="text"
+              autocomplete="name"
+              required
+              placeholder={c.placeholders.name}
+              aria-describedby="mail-name-error"
+              data-error={c.errors.name}
+            />
+            <span class="mail__error" id="mail-name-error" aria-live="polite"></span>
+          </div>
+          <div class="mail__field">
+            <label class="visually-hidden" for="mail-email">{c.labels.email}</label>
+            <input
+              class="mail__input"
+              id="mail-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder={c.placeholders.email}
+              aria-describedby="mail-email-error"
+              data-error={c.errors.email}
+            />
+            <span class="mail__error" id="mail-email-error" aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject -->
+      <div class="mail__row">
+        <label class="mail__label" for="mail-subject">{c.labels.subject}</label>
+        <div class="mail__value">
+          <div class="mail__field mail__field--grow">
+            <input
+              class="mail__input"
+              id="mail-subject"
+              name="subject"
+              type="text"
+              required
+              placeholder={c.placeholders.subject}
+              aria-describedby="mail-subject-error"
+              data-error={c.errors.subject}
+            />
+            <span class="mail__error" id="mail-subject-error" aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="mail__body">
+        <label class="visually-hidden" for="mail-message">{c.labels.message}</label>
+        <textarea
+          class="mail__textarea"
+          id="mail-message"
+          name="message"
+          required
+          placeholder={c.placeholders.message}
+          aria-describedby="mail-message-error"
+          data-error={c.errors.message}></textarea>
+        <span class="mail__error mail__error--body" id="mail-message-error" aria-live="polite"></span>
+      </div>
+
+      <!-- Honeypot: hidden from people and screen readers; bots tend to tick it -->
+      <div class="mail__honeypot" aria-hidden="true">
+        <label for="mail-botcheck">{c.honeypotLabel}</label>
+        <input type="checkbox" id="mail-botcheck" name="botcheck" tabindex="-1" autocomplete="off" />
+      </div>
+    </div>
+
+    <!-- Last in the form so Tab reaches it after the message; shown in the toolbar via CSS.
+         Outside the compose area so it doesn't fly away on send. -->
+    <button type="submit" class="mail__send" data-mail-send disabled aria-label={c.send}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+    </button>
+  </form>
+
+  <!-- Status: error (inline, keeps the draft) -->
+  <div class="mail__banner" data-mail-error role="alert" hidden>
+    <strong>{c.errorTitle}</strong>
+    <p>{c.errorBody}</p>
+    <div class="mail__banner-actions">
+      <button type="button" class="mail__button" data-mail-retry>{c.tryAgain}</button>
+      <button type="button" class="mail__button mail__button--quiet" data-mail-copy data-email={c.to.email} data-copied={c.copied} data-failed={c.copyFailed}>
+        <span data-mail-copy-label>{c.copyEmail}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Status: sent -->
+  <div class="mail__sent" data-mail-sent hidden tabindex="-1" aria-labelledby="mail-sent-title">
+    <svg class="mail__sent-icon" viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="20" />
+      <path d="m15 24 6 6 12-13" />
+    </svg>
+    <h3 class="mail__sent-title" id="mail-sent-title">{c.sentTitle}</h3>
+    <p class="mail__sent-body">{c.sentBody}</p>
+    <button type="button" class="mail__button" data-mail-again>{c.sendAnother}</button>
+  </div>
+
+  <p class="visually-hidden" data-mail-status aria-live="polite" data-sending={c.sending}></p>
 </div>
 
 <style>
-  .mail-window {
-    padding: var(--space-6);
+  .mail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    background: var(--color-mail-bg);
+    font-family: var(--font-system);
+    font-size: var(--text-menubar);
+    color: var(--color-text);
   }
 
-  .mail-window__heading {
-    margin: 0 0 var(--space-2);
+  .mail__form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  /* ---- Toolbar ---- */
+  .mail__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: calc(var(--mail-send-size) + var(--space-4));
+    /* right padding leaves room for the Send button positioned over the toolbar */
+    padding: var(--space-2) calc(var(--mail-send-size) + var(--space-6)) var(--space-2) var(--space-4);
+    border-bottom: var(--border-thin) solid var(--color-mail-divider);
+  }
+
+  .mail__tools {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none; /* scrolls sideways on phones without a visible bar */
+  }
+
+  .mail__tool-wrap {
+    position: relative;
+  }
+
+  .mail__tool {
+    display: grid;
+    place-items: center;
+    width: calc(var(--mail-tool-h) * 1.25);
+    height: var(--mail-tool-h);
+    padding: 0;
+    border: var(--border-thin) solid var(--color-mail-tool-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-mail-tool-bg);
+    color: var(--color-mail-tool);
+    cursor: default;
+  }
+
+  .mail__tool svg {
+    width: 55%;
+    height: 55%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mail__tool-text {
+    font-size: var(--text-base);
+    font-weight: 500;
+  }
+
+  .mail__tooltip {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 50%;
+    translate: -50% 0;
+    z-index: 3;
+    padding: 2px var(--space-2);
+    background: var(--color-tooltip-bg);
+    border: var(--border-thin) solid var(--color-tooltip-border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-paper);
+    font-size: var(--text-tooltip);
+    white-space: nowrap;
+    color: var(--color-tooltip-text);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .mail__tool-wrap:hover .mail__tooltip {
+    visibility: visible;
+  }
+
+  .mail__send {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-4);
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: var(--mail-send-size);
+    height: var(--mail-send-size);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--color-mail-send-bg);
+    color: var(--color-mail-send-text);
+    cursor: pointer;
+  }
+
+  .mail__send[hidden] {
+    display: none;
+  }
+
+  .mail__send:disabled {
+    background: var(--color-mail-send-disabled);
+    cursor: default;
+  }
+
+  .mail__send svg {
+    width: 55%;
+    height: 55%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ---- Rows ---- */
+  .mail__compose {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 0 var(--space-5);
+    transform-origin: 100% 0; /* folds toward the Send button */
+  }
+
+  .mail__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--mail-row-h);
+    border-bottom: var(--border-thin) solid var(--color-mail-divider);
+  }
+
+  .mail__label {
+    flex: none;
+    width: var(--mail-label-w);
+    color: var(--color-mail-label);
+  }
+
+  .mail__value {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    min-width: 0;
+    padding: var(--space-1) 0;
+  }
+
+  .mail__chip {
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-mail-chip-bg);
+    color: var(--color-mail-chip-text);
+    overflow-wrap: anywhere;
+  }
+
+  .mail__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    border: var(--border-thin) solid var(--color-mail-tool-border);
+    border-radius: var(--radius-pill);
+    background: var(--color-mail-tool-bg);
+    font: inherit;
+    font-size: var(--text-xs);
+    color: var(--color-mail-tool);
+    cursor: pointer;
+  }
+
+  .mail__copy svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+  }
+
+  .mail__field {
+    display: flex;
+    flex-direction: column;
+    min-width: 10rem;
+  }
+
+  .mail__field--grow {
+    flex: 1;
+  }
+
+  .mail__value--from .mail__field {
+    flex: 1;
+  }
+
+  .mail__input,
+  .mail__textarea {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    caret-color: var(--color-mail-caret);
+  }
+
+  .mail__input:focus,
+  .mail__textarea:focus {
+    outline: none;
+  }
+
+  .mail__field:focus-within,
+  .mail__body:focus-within {
+    box-shadow: inset 0 -2px 0 var(--color-mail-caret);
+  }
+
+  .mail__input[aria-invalid='true'] {
+    color: var(--color-mail-error);
+  }
+
+  .mail__error {
+    font-size: var(--text-xs);
+    color: var(--color-mail-error);
+  }
+
+  .mail__error:empty {
+    display: none;
+  }
+
+  /* ---- Body ---- */
+  .mail__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: var(--space-4) 0;
+  }
+
+  .mail__textarea {
+    flex: 1;
+    min-height: 10rem;
+    resize: none;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.6;
+  }
+
+  .mail__textarea::placeholder,
+  .mail__input::placeholder {
+    color: var(--color-mail-label);
+  }
+
+  .mail__honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* ---- Error banner ---- */
+  .mail__banner {
+    margin: 0 var(--space-5) var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-thin) solid var(--color-mail-error);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-soft);
+  }
+
+  .mail__banner[hidden] {
+    display: none;
+  }
+
+  .mail__banner p {
+    margin: var(--space-1) 0 var(--space-3);
+  }
+
+  .mail__banner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .mail__button {
+    padding: var(--chip-pad);
+    border: var(--border-thin) solid var(--color-mail-send-bg);
+    border-radius: var(--radius-pill);
+    background: var(--color-mail-send-bg);
+    font: inherit;
+    font-weight: 500;
+    color: var(--color-mail-send-text);
+    cursor: pointer;
+  }
+
+  .mail__button--quiet {
+    border-color: var(--color-mail-tool-border);
+    background: var(--color-mail-tool-bg);
+    color: var(--color-text);
+  }
+
+  /* ---- Sent ---- */
+  .mail__sent {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-8);
+    background: var(--color-mail-bg);
+    text-align: center;
+  }
+
+  .mail__sent[hidden] {
+    display: none;
+  }
+
+  .mail__sent:focus {
+    outline: none;
+  }
+
+  .mail__sent-icon {
+    width: 3rem;
+    height: 3rem;
+    fill: none;
+    stroke: var(--color-mail-success);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mail__sent-title {
+    margin: 0;
     font-family: var(--font-display);
-    font-size: var(--text-xl);
+    font-size: var(--text-2xl);
     font-weight: 400;
   }
 
-  .mail-window__body {
-    margin: 0;
+  .mail__sent-body {
+    margin: 0 0 var(--space-3);
     color: var(--color-text-muted);
+  }
+
+  /* ---- Phone ---- */
+  @media (max-width: 767px) {
+    .mail__compose {
+      padding: 0 var(--space-4);
+    }
+
+    .mail__row {
+      align-items: flex-start;
+      padding-top: var(--space-2);
+    }
+
+    .mail__label {
+      width: auto;
+      min-width: 3.5rem;
+      padding-top: var(--space-1);
+    }
+
+    .mail__value--from {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .mail__input,
+    .mail__textarea {
+      font-size: var(--text-input-min); /* no iOS zoom on focus */
+    }
   }
 </style>

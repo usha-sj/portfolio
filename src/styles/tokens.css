@@ -195,6 +195,26 @@
   --color-sticker-label-text: var(--white);
   --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 
+  /* ---- Mail app (Contact) ---- */
+  --color-mail-bg: var(--white);
+  --color-mail-label: var(--neutral-400);
+  --color-mail-divider: rgb(29 27 24 / 0.1);
+  --color-mail-tool: var(--neutral-600);
+  --color-mail-tool-bg: var(--oat-50);
+  --color-mail-tool-border: rgb(29 27 24 / 0.12);
+  --color-mail-chip-bg: var(--ink-200);
+  --color-mail-chip-text: var(--ink-900);
+  --color-mail-send-bg: var(--ink-700);
+  --color-mail-send-text: var(--white);
+  --color-mail-send-disabled: var(--oat-300);
+  --color-mail-error: var(--burgundy-500);
+  --color-mail-success: var(--ink-700);
+  --color-mail-caret: var(--ink-500);
+  --mail-label-w: 5.5rem;
+  --mail-row-h: 2.6rem;
+  --mail-tool-h: 2.1rem;
+  --mail-send-size: 2.4rem;
+
   /* ---- Fonts (loaded in src/layouts/Base.astro) ---- */
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body: 'DM Sans', system-ui, sans-serif;
