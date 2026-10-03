@@ -2,17 +2,19 @@
 // Holds every window: the chrome template, one content template per app/project,
 // and the layer windows are placed in. The manager lives in src/scripts/windows.ts.
 import { getCollection } from 'astro:content';
-import { apps, projectApp, projectFileApp } from '../../config/apps';
+import { apps, projectApp, projectFileApp, videoApp } from '../../config/apps';
 import { siteConfig } from '../../config/site';
 import Window from './Window.astro';
 import FinderWindow from './FinderWindow.astro';
 import NotesWindow from './NotesWindow.astro';
-import PreviewWindow from './PreviewWindow.astro';
+import MapsWindow from './MapsWindow.astro';
 import MailWindow from './MailWindow.astro';
 import TerminalWindow from './TerminalWindow.astro';
 import TrashWindow from './TrashWindow.astro';
 import ProjectFolderWindow from './ProjectFolderWindow.astro';
 import ProjectTextWindow from './ProjectTextWindow.astro';
+import ProjectVideoWindow from './ProjectVideoWindow.astro';
+import QuickLook from './QuickLook.astro';
 
 interface Props {
   /** Window to open on page load (from the URL), e.g. 'notes' or 'project/foo' */
@@ -25,7 +27,7 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.order -
 const appTemplates = [
   { app: apps.finder, Content: FinderWindow, props: { projects } },
   { app: apps.notes, Content: NotesWindow, props: {} },
-  { app: apps.preview, Content: PreviewWindow, props: {} },
+  { app: apps.maps, Content: MapsWindow, props: {} },
   { app: apps.mail, Content: MailWindow, props: {} },
   { app: apps.terminal, Content: TerminalWindow, props: {} },
   { app: apps.trash, Content: TrashWindow, props: {} },
@@ -63,20 +65,38 @@ const appTemplates = [
       >
         <ProjectFolderWindow project={project} />
       </template>
-      {/* <slug>.txt inside it (TextEdit window) */}
+      {/* README.txt inside it (TextEdit window) */}
       <template
         data-window-template={`project/${project.id}${projectFileApp.pathSuffix}`}
         data-app={projectFileApp.id}
         data-app-label={projectFileApp.label}
-        data-title={projectFileApp.fileName.replace('{slug}', project.id)}
+        data-title={project.data.files.find((f) => f.type === 'txt')?.name ?? projectFileApp.fileName}
         data-path={`${projectApp.pathPrefix}${project.id}${projectFileApp.pathSuffix}`}
         data-size={projectFileApp.size}
       >
         <ProjectTextWindow project={project} />
       </template>
+      {/* Videos (QuickTime): only once a real src is set. They keep the folder's URL. */}
+      {project.data.files.map((file, i) =>
+        file.type === 'video' && file.src ? (
+          <template
+            data-window-template={`project/${project.id}/video/${i}`}
+            data-app={videoApp.id}
+            data-app-label={videoApp.label}
+            data-title={file.name}
+            data-path={`${projectApp.pathPrefix}${project.id}`}
+            data-routable="false"
+            data-size={videoApp.size}
+          >
+            <ProjectVideoWindow src={file.src} poster={file.poster} label={`${project.data.title}: ${file.name}`} />
+          </template>
+        ) : null,
+      )}
     </>
   ))
 }
+
+<QuickLook />
 
 <div class="windows" data-window-layer data-initial-window={initial} data-site-title={siteConfig.title}></div>
 
@@ -101,13 +121,15 @@ const appTemplates = [
   import { initContact } from '../../scripts/contact';
   import { initFinder } from '../../scripts/finder';
   import { initNotes } from '../../scripts/notes';
-  import { initResume } from '../../scripts/resume';
+  import { initQuickLook } from '../../scripts/quicklook';
+  import { initMaps } from '../../scripts/maps';
   import { initWindowManager } from '../../scripts/windows';
 
   // Content listeners first, so they catch the window opened from the URL
   initContact();
   initFinder();
   initNotes();
-  initResume();
+  initQuickLook();
+  initMaps();
   initWindowManager();
 </script>

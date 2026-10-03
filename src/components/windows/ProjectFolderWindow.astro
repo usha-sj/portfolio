@@ -1,8 +1,11 @@
 ---
-// A project folder, Finder-style: the files inside it. For now that's <slug>.txt
-// (opens the TextEdit window) plus any `files` from the project's frontmatter.
+// A project folder, Finder-style: only the files that project has (from its `files` list).
+//   txt   → README in TextEdit        image → Quick Look (arrows cycle every image here)
+//   video → QuickTime window          link  → <name>.webloc, opens in a new tab
+// Files without a path yet (video src '', link url '') are hidden.
+// Click selects, double-click / Enter opens (Space opens images in Quick Look), via src/scripts/selection.ts.
 import type { CollectionEntry } from 'astro:content';
-import { projectFileApp, windowText } from '../../config/apps';
+import { linkFileExt, projectFileApp, windowText } from '../../config/apps';
 import FileIcon from '../icons/FileIcon.astro';
 
 interface Props {
@@ -10,31 +13,73 @@ interface Props {
 }
 
 const { project } = Astro.props;
-const textFile = {
-  name: projectFileApp.fileName.replace('{slug}', project.id),
-  window: `project/${project.id}${projectFileApp.pathSuffix}`,
-};
-const extraFiles = project.data.files;
-const count = 1 + extraFiles.length;
-const ext = (name: string) => name.split('.').pop() ?? '';
+const slug = project.id;
+const files = project.data.files.filter(
+  (f) => !(f.type === 'video' && !f.src) && !(f.type === 'link' && !f.url),
+);
+const readmeWindow = `project/${slug}${projectFileApp.pathSuffix}`;
+// Video window ids use the file's position in the full list, matching WindowLayer.astro
+const videoWindow = (name: string) => `project/${slug}/video/${project.data.files.findIndex((f) => f.name === name)}`;
 const t = windowText.folder;
+const count = files.length;
 ---
 
 <div class="folder-window">
   <ul class="folder-window__grid" data-select-group>
-    <li>
-      <button type="button" class="folder-window__item" data-select-open={textFile.window} aria-describedby="select-open-hint">
-        <FileIcon ext={ext(textFile.name)} class="folder-window__icon" />
-        <span class="folder-window__name">{textFile.name}</span>
-      </button>
-    </li>
     {
-      extraFiles.map((file) => (
+      files.map((file) => (
         <li>
-          <a class="folder-window__item" href={file.src} target="_blank" rel="noopener noreferrer">
-            <FileIcon ext={ext(file.name)} class="folder-window__icon" />
-            <span class="folder-window__name">{file.name}</span>
-          </a>
+          {file.type === 'txt' && (
+            <button type="button" class="folder-window__item" data-select-open={readmeWindow} aria-describedby="select-open-hint">
+              <span class="folder-window__icon">
+                <FileIcon ext="txt" />
+              </span>
+              <span class="folder-window__name">{file.name}</span>
+            </button>
+          )}
+          {file.type === 'image' && (
+            <button
+              type="button"
+              class="folder-window__item"
+              data-quicklook
+              data-src={file.src}
+              data-alt={file.alt}
+              data-name={file.name}
+              aria-describedby="select-open-hint"
+            >
+              <span class="folder-window__icon">
+                <span class="folder-window__thumb" data-quicklook-thumb>
+                  <img src={file.src} alt="" loading="lazy" decoding="async" />
+                </span>
+              </span>
+              <span class="folder-window__name">{file.name}</span>
+            </button>
+          )}
+          {file.type === 'video' && (
+            <button type="button" class="folder-window__item" data-select-open={videoWindow(file.name)} aria-describedby="select-open-hint">
+              <span class="folder-window__icon">
+                {file.poster ? (
+                  <span class="folder-window__thumb folder-window__thumb--video">
+                    <img src={file.poster} alt="" loading="lazy" decoding="async" />
+                  </span>
+                ) : (
+                  <FileIcon ext="mp4" kind="video" />
+                )}
+              </span>
+              <span class="folder-window__name">{file.name}</span>
+            </button>
+          )}
+          {file.type === 'link' && (
+            <button type="button" class="folder-window__item" data-open-url={file.url} aria-describedby="select-open-hint">
+              <span class="folder-window__icon">
+                <FileIcon ext="url" kind="link" />
+              </span>
+              <span class="folder-window__name">
+                {file.name}
+                {linkFileExt}
+              </span>
+            </button>
+          )}
         </li>
       ))
     }
@@ -75,12 +120,36 @@ const t = windowText.folder;
     font: inherit;
     color: inherit;
     text-align: center;
-    text-decoration: none;
     cursor: default;
   }
 
-  .folder-window__item :global(.folder-window__icon) {
-    width: calc(var(--folder-icon-size) * 0.75);
+  /* Every icon sits in the same square box so names line up */
+  .folder-window__icon {
+    display: grid;
+    place-items: center;
+    width: calc(var(--folder-icon-size) * 0.85);
+    aspect-ratio: 1;
+  }
+
+  .folder-window__icon > :global(.file-icon) {
+    width: 78%;
+  }
+
+  /* Image thumbnails: white mat + shadow, like Finder */
+  .folder-window__thumb {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    padding: calc(var(--folder-thumb-border) * 2);
+    background: var(--color-file-thumb-mat);
+    box-shadow: var(--shadow-file-thumb);
+  }
+
+  .folder-window__thumb img {
+    display: block;
+    width: calc(var(--folder-icon-size) * 0.8);
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
   }
 
   .folder-window__name {

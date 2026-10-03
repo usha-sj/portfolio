@@ -12,7 +12,7 @@ export async function getStaticPaths() {
 }
 
 const { project } = Astro.props as { project: CollectionEntry<'projects'> };
-const fileName = projectFileApp.fileName.replace('{slug}', project.id);
+const fileName = project.data.files.find((f) => f.type === 'txt')?.name ?? projectFileApp.fileName;
 ---
 
 <Base title={`${fileName} · ${siteConfig.title}`} skipLoader>

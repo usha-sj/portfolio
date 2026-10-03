@@ -93,7 +93,8 @@ function setup() {
       template: t,
     };
     defs.set(def.id, def);
-    idByPath.set(def.path, def.id);
+    // Some windows (videos) share their folder's URL; only the folder owns it for back/forward
+    if (d.routable !== 'false') idByPath.set(def.path, def.id);
   }
 
   const windows = new Map<string, OpenWindow>();

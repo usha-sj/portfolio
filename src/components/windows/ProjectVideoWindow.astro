@@ -1,0 +1,30 @@
+---
+// QuickTime-style player for a project video. Only rendered once the file has a real `src`.
+interface Props {
+  src: string;
+  poster?: string;
+  label: string;
+}
+
+const { src, poster, label } = Astro.props;
+---
+
+<div class="player">
+  <video class="player__video" src={src} poster={poster} controls muted playsinline preload="none" aria-label={label}></video>
+</div>
+
+<style>
+  .player {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    background: var(--color-video-bg);
+  }
+
+  .player__video {
+    display: block;
+    width: 100%;
+    max-height: 100%;
+    background: var(--color-video-bg);
+  }
+</style>

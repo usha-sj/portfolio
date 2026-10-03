@@ -6,7 +6,12 @@
  */
 
 const MOBILE_QUERY = '(max-width: 767px)';
-const SELECTABLE = '[data-select-open]';
+// What each kind of icon opens:
+//   data-select-open="<window id>"  → that window
+//   data-quicklook                  → Quick Look (images; see quicklook.ts)
+//   data-open-url="<url>"           → a new tab (.webloc links)
+const SELECTABLE = '[data-select-open], [data-quicklook], [data-open-url]';
+const SELECTED = SELECTABLE.split(',').map((sel) => `${sel.trim()}[data-selected]`).join(', ');
 
 let started = false;
 
@@ -20,16 +25,21 @@ export function initSelection() {
 
   const select = (item: HTMLElement | null) => {
     const scope = item ? groupOf(item) : document;
-    scope.querySelectorAll<HTMLElement>(`${SELECTABLE}[data-selected]`).forEach((el) => {
+    scope.querySelectorAll<HTMLElement>(SELECTED).forEach((el) => {
       if (el !== item) el.removeAttribute('data-selected');
     });
     item?.setAttribute('data-selected', '');
   };
 
-  const open = (item: HTMLElement) =>
-    document.dispatchEvent(
-      new CustomEvent('window:request', { detail: { id: item.dataset.selectOpen, opener: item } }),
-    );
+  const open = (item: HTMLElement) => {
+    if (item.dataset.openUrl) {
+      window.open(item.dataset.openUrl, '_blank', 'noopener,noreferrer');
+    } else if (item.hasAttribute('data-quicklook')) {
+      document.dispatchEvent(new CustomEvent('quicklook:open', { detail: { item } }));
+    } else {
+      document.dispatchEvent(new CustomEvent('window:request', { detail: { id: item.dataset.selectOpen, opener: item } }));
+    }
+  };
 
   const itemFrom = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>(SELECTABLE);
 
@@ -46,12 +56,14 @@ export function initSelection() {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
     const item = itemFrom(e);
     if (!item) return;
-    e.preventDefault(); // otherwise the button's click would just select
-    select(item);
-    open(item);
+    // Enter opens anything; Space opens images in Quick Look, like Finder
+    if (e.key === 'Enter' || (e.key === ' ' && item.hasAttribute('data-quicklook'))) {
+      e.preventDefault(); // otherwise the button's click would just select
+      select(item);
+      open(item);
+    }
   });
 
   document.addEventListener('focusin', (e) => {
@@ -64,6 +76,6 @@ export function initSelection() {
     const target = e.target as HTMLElement;
     if (target.closest(SELECTABLE)) return;
     const scope = target.closest('[data-select-group]') ?? document;
-    scope.querySelectorAll(`${SELECTABLE}[data-selected]`).forEach((el) => el.removeAttribute('data-selected'));
+    scope.querySelectorAll(SELECTED).forEach((el) => el.removeAttribute('data-selected'));
   });
 }

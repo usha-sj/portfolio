@@ -1,117 +1,69 @@
 ---
-// <slug>.txt inside a project folder: a TextEdit-style document with everything about the project.
-// Gets the content collection entry; the Markdown body renders below the facts.
+// README.txt inside a project folder: a TextEdit-style document. The text is the Markdown
+// body of the project's file in src/content/projects/ (edit it there).
 import type { CollectionEntry } from 'astro:content';
 import { render } from 'astro:content';
-import { windowText } from '../../config/apps';
 
 interface Props {
   project: CollectionEntry<'projects'>;
 }
 
 const { project } = Astro.props;
-const { title, year, role, tech, summary, links, cover, coverAlt } = project.data;
 const { Content } = await render(project);
-const t = windowText.project;
 ---
 
-<article class="project">
-  {
-    cover ? (
-      <img class="project__cover" src={cover} alt={coverAlt} loading="lazy" />
-    ) : (
-      <div class="project__cover project__cover--empty" aria-hidden="true">
-        {t.noCover}
-      </div>
-    )
-  }
-  <div class="project__inner">
-    <h3 class="project__title">{title}</h3>
-    <p class="project__summary">{summary}</p>
-
-    <dl class="project__facts">
-      <div><dt>{t.yearLabel}</dt><dd>{year}</dd></div>
-      <div><dt>{t.roleLabel}</dt><dd>{role}</dd></div>
-      <div><dt>{t.techLabel}</dt><dd>{tech.join(', ')}</dd></div>
-    </dl>
-
-    {
-      (links.github || links.demo) && (
-        <p class="project__links">
-          {links.github && <a href={links.github} target="_blank" rel="noopener noreferrer">{t.githubLabel}</a>}
-          {links.demo && <a href={links.demo} target="_blank" rel="noopener noreferrer">{t.demoLabel}</a>}
-        </p>
-      )
-    }
-
-    <div class="project__body">
-      <Content />
-    </div>
+<article class="readme">
+  <h3 class="readme__title">{project.data.title}</h3>
+  <p class="readme__meta">{[project.data.role, project.data.period ?? String(project.data.year)].join(' · ')}</p>
+  <div class="readme__body">
+    <Content />
   </div>
 </article>
 
 <style>
-  .project__cover {
-    width: 100%;
-    aspect-ratio: 16 / 7;
-    object-fit: cover;
+  .readme {
+    min-height: 100%;
+    padding: var(--space-8) var(--space-6) var(--space-12);
+    background: var(--color-textedit-page);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.65;
+    color: var(--color-text);
   }
 
-  .project__cover--empty {
-    display: grid;
-    place-items: center;
-    background: var(--color-photo-empty);
-    color: var(--color-photo-empty-text);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+  .readme > * {
+    max-width: var(--textedit-w);
+    margin-inline: auto;
   }
 
-  .project__inner {
-    padding: var(--space-5) var(--space-6) var(--space-6);
-  }
-
-  .project__title {
-    margin: 0;
+  .readme__title {
+    margin-top: 0;
+    margin-bottom: var(--space-1);
     font-family: var(--font-display);
     font-size: var(--text-2xl);
     font-weight: 400;
     line-height: 1.1;
   }
 
-  .project__summary {
-    margin: var(--space-2) 0 var(--space-4);
+  .readme__meta {
+    margin-top: 0;
+    margin-bottom: var(--space-6);
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
 
-  .project__facts {
-    display: grid;
-    gap: var(--space-1);
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-sm);
-  }
-
-  .project__facts div {
-    display: grid;
-    grid-template-columns: 5rem 1fr;
-  }
-
-  .project__facts dt {
+  /* Rendered Markdown, so its elements need :global */
+  .readme__body :global(h2) {
+    margin: var(--space-6) 0 var(--space-1);
+    font-family: var(--font-system);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--color-text-muted);
   }
 
-  .project__facts dd {
-    margin: 0;
-  }
-
-  .project__links {
-    display: flex;
-    gap: var(--space-4);
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-sm);
-    font-weight: 500;
-  }
-
-  .project__links a {
-    color: var(--color-accent);
+  .readme__body :global(p) {
+    margin: 0 0 var(--space-3);
   }
 </style>

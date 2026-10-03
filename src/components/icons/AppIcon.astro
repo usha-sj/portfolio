@@ -32,15 +32,15 @@ const custom = (apps[app] as { icon?: string }).icon;
             <path class="no-lines" d="M14 44h72M14 58h72M14 72h72M14 86h72" />
           </>
         )}
-        {app === 'preview' && (
+        {app === 'maps' && (
           <>
-            <g transform="rotate(-6 46 46)">
-              <rect class="pr-frame" x="15" y="19" width="58" height="50" rx="3" />
-              <rect class="pr-sky" x="19" y="23" width="50" height="42" />
-              <path class="pr-hill" d="M19 65V51c10-8 18-8 26-2s14 6 24-2v18z" />
-            </g>
-            <circle class="pr-lens" cx="66" cy="66" r="13" />
-            <path class="pr-handle" d="M75.5 75.5 86 86" />
+            {/* folded paper map: three panels, a dashed route and a pin */}
+            <path class="mp-panel" d="M14 22l22-7v63l-22 7z" />
+            <path class="mp-panel mp-panel--mid" d="M36 15l28 7v63l-28-7z" />
+            <path class="mp-panel" d="M64 22l22-7v63l-22 7z" />
+            <path class="mp-route" d="M22 70c10-6 14-20 26-22s18 10 30-4" />
+            <path class="mp-pin" d="M74 26a9 9 0 0 1 9 9c0 7-9 15-9 15s-9-8-9-15a9 9 0 0 1 9-9z" />
+            <circle class="mp-pin-dot" cx="74" cy="35" r="3.2" />
           </>
         )}
         {app === 'mail' && (
@@ -97,7 +97,7 @@ const custom = (apps[app] as { icon?: string }).icon;
 
   .app-icon--finder   { background: var(--icon-finder-bg); }
   .app-icon--notes    { background: var(--icon-notes-bg); }
-  .app-icon--preview  { background: var(--icon-preview-bg); }
+  .app-icon--maps     { background: var(--icon-maps-bg); }
   .app-icon--mail     { background: var(--icon-mail-bg); }
   .app-icon--terminal { background: var(--icon-terminal-bg); }
 
@@ -123,11 +123,11 @@ const custom = (apps[app] as { icon?: string }).icon;
   .no-band { fill: url(#grad-notes-band); }
   .no-lines { stroke: var(--color-icon-notes-lines); stroke-width: 2.5; stroke-dasharray: 2 4; }
 
-  .pr-frame { fill: var(--color-icon-preview-frame); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.2)); }
-  .pr-sky { fill: var(--color-icon-preview-sky); }
-  .pr-hill { fill: var(--color-icon-preview-hill); }
-  .pr-lens { fill: rgb(255 255 255 / 0.35); stroke: var(--color-icon-preview-lens); stroke-width: 5; }
-  .pr-handle { stroke: var(--color-icon-preview-lens); stroke-width: 8; stroke-linecap: round; }
+  .mp-panel { fill: var(--color-icon-maps-paper); }
+  .mp-panel--mid { fill: var(--color-icon-maps-fold); }
+  .mp-route { fill: none; stroke: var(--color-icon-maps-route); stroke-width: 3; stroke-dasharray: 5 4; stroke-linecap: round; }
+  .mp-pin { fill: var(--color-icon-maps-pin); filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25)); }
+  .mp-pin-dot { fill: var(--color-icon-maps-paper); }
 
   .ma-fg { fill: var(--color-icon-mail-fg); filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.25)); }
   .ma-flap { fill: none; stroke: var(--color-icon-mail-fold); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }

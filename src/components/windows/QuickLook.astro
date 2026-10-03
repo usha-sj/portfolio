@@ -1,0 +1,172 @@
+---
+// Quick Look: an overlay image viewer (not a regular window), like macOS.
+// Opened from image files in a folder; behaviour in src/scripts/quicklook.ts.
+import { quickLookText as t } from '../../config/apps';
+---
+
+<div
+  class="quicklook"
+  data-quicklook-root
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="quicklook-title"
+  data-counter={t.counter}
+  hidden
+>
+  <div class="quicklook__backdrop" data-ql-close></div>
+  <div class="quicklook__panel" data-ql-panel data-anim="quicklook">
+    <header class="quicklook__bar">
+      <button type="button" class="quicklook__btn" data-ql-close aria-label={t.close}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </button>
+      <h2 class="quicklook__title" id="quicklook-title">
+        <span data-ql-name></span>{' '}<span class="quicklook__count" data-ql-count></span>
+      </h2>
+      <div class="quicklook__nav">
+        <button type="button" class="quicklook__btn" data-ql-prev aria-label={t.previous}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+        </button>
+        <button type="button" class="quicklook__btn" data-ql-next aria-label={t.next}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
+        </button>
+      </div>
+    </header>
+    <div class="quicklook__stage" data-ql-stage>
+      <img class="quicklook__img" data-ql-img alt="" />
+    </div>
+  </div>
+</div>
+
+<style>
+  .quicklook {
+    position: fixed;
+    inset: var(--menubar-h) 0 0;
+    z-index: var(--z-quicklook);
+    display: grid;
+    place-items: center;
+  }
+
+  .quicklook[hidden] {
+    display: none;
+  }
+
+  .quicklook__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--color-quicklook-backdrop);
+  }
+
+  .quicklook__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(var(--quicklook-w), 100% - 2 * var(--space-8));
+    height: min(var(--quicklook-h), 100% - var(--dock-h) - var(--space-8));
+    overflow: hidden;
+    background: var(--color-quicklook-panel);
+    -webkit-backdrop-filter: var(--menubar-blur);
+    backdrop-filter: var(--menubar-blur);
+    border: var(--border-thin) solid var(--color-quicklook-border);
+    border-radius: var(--radius-window);
+    box-shadow: var(--shadow-quicklook);
+  }
+
+  .quicklook__bar {
+    flex: none;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--quicklook-bar-h);
+    padding: 0 var(--space-2);
+    border-bottom: var(--border-thin) solid var(--color-quicklook-border);
+    font-family: var(--font-system);
+  }
+
+  .quicklook__title {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-size: var(--text-window-title);
+    font-weight: 600;
+  }
+
+  .quicklook__count {
+    margin-left: var(--space-2);
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  .quicklook__nav {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .quicklook__btn {
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.6rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--color-quicklook-button);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .quicklook__btn:hover {
+    background: var(--color-quicklook-button-hover);
+  }
+
+  .quicklook__btn[hidden] {
+    display: none;
+  }
+
+  .quicklook__btn svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .quicklook__stage {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    overflow: hidden;
+    background: var(--color-quicklook-stage);
+    touch-action: pan-y; /* horizontal swipes go to the viewer */
+  }
+
+  .quicklook__img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* Phone: full-screen viewer */
+  @media (max-width: 767px) {
+    .quicklook__panel {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .quicklook__btn {
+      width: 2.4rem;
+      height: 2.2rem;
+    }
+  }
+</style>

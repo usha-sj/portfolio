@@ -7,6 +7,7 @@
   /* ---- Palette: oat paper, ink blue, burgundy ---- */
   --oat-50: #faf6ee;
   --oat-100: #f3ecdf;
+  --oat-150: #efe6d4;
   --oat-200: #ede3d1;
   --oat-300: #ded1b9;
   --ink-900: #1c2a44;
@@ -101,11 +102,11 @@
   --color-icon-notes-band-top: var(--burgundy-300);
   --color-icon-notes-band-bottom: var(--burgundy-500);
   --color-icon-notes-lines: var(--oat-300);
-  --icon-preview-bg: linear-gradient(to bottom, var(--oat-50), var(--oat-200));
-  --color-icon-preview-sky: var(--ink-300);
-  --color-icon-preview-hill: var(--burgundy-300);
-  --color-icon-preview-frame: var(--white);
-  --color-icon-preview-lens: var(--ink-700);
+  --icon-maps-bg: linear-gradient(to bottom, var(--ink-300), var(--ink-500));
+  --color-icon-maps-paper: var(--oat-50);
+  --color-icon-maps-fold: var(--oat-200);
+  --color-icon-maps-route: var(--ink-500);
+  --color-icon-maps-pin: var(--burgundy-500);
   --icon-mail-bg: linear-gradient(to bottom, var(--ink-500), var(--ink-700));
   --color-icon-mail-fg: var(--oat-50);
   --color-icon-mail-fold: var(--oat-200);
@@ -129,6 +130,15 @@
   --color-file-lines: var(--oat-300);
   --color-file-badge: var(--ink-500);
   --color-file-badge-text: var(--white);
+  --color-file-video: var(--burgundy-500);
+  --color-file-link: var(--ink-700);
+  --color-folder-thumb-border: var(--white);
+  --folder-thumb-border: 1.5px;
+  --radius-folder-thumb: 2px;
+  --shadow-folder-thumb: 0 1px 2px rgb(0 0 0 / 0.25);
+  /* Image thumbnails in folder windows (Finder-style: white mat + shadow) */
+  --color-file-thumb-mat: var(--white);
+  --shadow-file-thumb: 0 1px 3px rgb(0 0 0 / 0.22);
   --color-folder-label: var(--neutral-900);
   --color-folder-label-bg: transparent;
   --shadow-folder-label: 0 0 3px rgb(255 253 248 / 0.9);
@@ -155,8 +165,8 @@
   --color-type-work-text: var(--ink-900);
   --color-type-leadership-bg: var(--burgundy-100);
   --color-type-leadership-text: var(--burgundy-700);
-  --color-type-teaching-bg: var(--burgundy-50);
-  --color-type-teaching-text: var(--burgundy-500);
+  --color-type-research-bg: var(--burgundy-50);
+  --color-type-research-text: var(--burgundy-500);
   --color-type-education-bg: var(--oat-200);
   --color-type-education-text: var(--neutral-600);
   --timeline-date-w: 7.5rem;
@@ -214,6 +224,45 @@
   --mail-row-h: 2.6rem;
   --mail-tool-h: 2.1rem;
   --mail-send-size: 2.4rem;
+
+  /* ---- Quick Look (image viewer) + QuickTime (video) ---- */
+  --color-quicklook-backdrop: rgb(29 27 24 / 0.35);
+  --color-quicklook-panel: rgb(250 246 238 / 0.94);
+  --color-quicklook-stage: var(--oat-100);
+  --color-quicklook-border: rgb(29 27 24 / 0.14);
+  --color-quicklook-button: rgb(29 27 24 / 0.06);
+  --color-quicklook-button-hover: rgb(29 27 24 / 0.12);
+  --shadow-quicklook: 0 0 0 0.5px rgb(0 0 0 / 0.1), 0 24px 70px rgb(40 30 20 / 0.35);
+  --quicklook-w: 960px;
+  --quicklook-h: 660px;
+  --quicklook-bar-h: 40px;
+  --color-video-bg: var(--neutral-900);
+  --color-textedit-page: var(--white);
+  --textedit-w: 40rem;
+
+  /* ---- Maps app (Experience) ---- */
+  --color-maps-sidebar: var(--oat-50);
+  --color-maps-paper: var(--oat-150); /* map paper, a touch warmer than the notes paper */
+  --color-maps-grid: rgb(91 108 143 / 0.08);
+  --maps-grid: repeating-linear-gradient(0deg, transparent 0 79px, var(--color-maps-grid) 79px 80px),
+    repeating-linear-gradient(90deg, transparent 0 79px, var(--color-maps-grid) 79px 80px);
+  --color-maps-contour: rgb(91 108 143 / 0.16);
+  --color-maps-water: rgb(147 166 207 / 0.28);
+  --color-maps-route: var(--ink-700);
+  --color-maps-pin: var(--burgundy-500);
+  --color-maps-pin-here: var(--ink-700);
+  --color-maps-pin-dim: var(--neutral-400);
+  --color-maps-pin-ring: var(--white);
+  --color-maps-label: var(--ink-900);
+  --color-maps-label-bg: rgb(250 246 238 / 0.85);
+  --color-maps-marker: var(--ink-500);
+  --color-maps-highlight: var(--burgundy-100);
+  --color-maps-card: var(--white); /* solid: no backdrop blur on the map (Safari layering) */
+  --color-maps-step: var(--ink-500);
+  --shadow-maps-card: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 12px 32px rgb(40 30 20 / 0.18);
+  --maps-sidebar-w: 290px;
+  --maps-card-w: 340px;
+  --maps-sheet-peek: 168px; /* phone bottom sheet when collapsed */
 
   /* ---- Fonts (loaded in src/layouts/Base.astro) ---- */
   --font-display: 'Instrument Serif', Georgia, serif;
@@ -318,6 +367,7 @@
   --z-folders: 20;
   --z-windows: 50;
   --z-dock: 90;
+  --z-quicklook: 95; /* above windows and the dock, below the menu bar */
   --z-menubar: 100;
   --z-menu: 110;
   --z-loader: 9999;

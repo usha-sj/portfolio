@@ -4,6 +4,10 @@ organisation: University of Toronto
 start: '2022-09'
 end: '2027-01'
 type: education
+stop: toronto-start
+summary: Started in Politics & Economics, then switched to a CS Specialist with a Math minor.
+tags: [Data Structures & Algorithms, Machine Learning, Distributed Systems]
+mode: on-site
 awards:
   - UofT International Scholar
   - UofT Scholar

@@ -1,20 +1,20 @@
 ---
-// One folder per featured project, in the right-hand column.
+// One folder per project (all of them, by `order`), in the right-hand column.
 // Click selects, double-click or Enter opens (like Finder).
 import { getCollection } from 'astro:content';
 import { desktopConfig } from '../../config/desktop';
 import FolderIcon from '../icons/FolderIcon.astro';
 
-const featured = (await getCollection('projects', (p) => p.data.featured)).sort((a, b) => a.data.order - b.data.order);
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 ---
 
 <ul class="folders" aria-label={desktopConfig.folders.label} data-select-group>
   {
-    featured.map((p) => (
+    projects.map((p) => (
       <li>
         <button type="button" class="folder" data-select-open={`project/${p.id}`} aria-describedby="select-open-hint">
           <span class="folder__icon">
-            <FolderIcon />
+            <FolderIcon cover={p.data.cover} />
           </span>
           <span class="folder__label">{p.data.title}</span>
         </button>

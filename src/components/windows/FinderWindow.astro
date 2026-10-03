@@ -30,7 +30,7 @@ const t = windowText.finder;
         projects.map((p) => (
           <li data-order={p.data.order} data-year={p.data.year}>
             <button type="button" class="finder__item" data-select-open={`project/${p.id}`} aria-describedby="select-open-hint">
-              <FolderIcon class="finder__icon" />
+              <FolderIcon class="finder__icon" cover={p.data.cover} />
               <span class="finder__name">{p.data.title}</span>
               <span class="finder__meta">{p.data.year}</span>
             </button>

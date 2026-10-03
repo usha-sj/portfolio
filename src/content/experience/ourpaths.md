@@ -4,6 +4,12 @@ organisation: ourPATHS (UofT Real World AI/ML Systems)
 start: '2025-05'
 end: '2025-09'
 type: work
+stop: toronto-cs
+summary: Built an agentic RAG pipeline for a pharma market-access dashboard.
+stat: { value: '~95%', label: 'query routing accuracy' }
+tags: [Python, LLM/RAG pipelines, Azure, Vector databases]
+project: ourpaths
+mode: hybrid
 link: https://github.com/CSC392-CSC492-Building-AI-ML-systems/HealthAssessmentDashboard
 bullets:
   - Designed and built an end-to-end AI-powered market-access dashboard with a 5-member cross-functional team, collaborating with stakeholders at 3 pharmaceutical companies to support drug pricing and reimbursement strategy.

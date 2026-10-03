@@ -13,7 +13,7 @@ export const desktopConfig = {
     // Dropdown under "Usha". `window` opens that app's window (see src/config/apps.ts);
     // `href` is the fallback URL and the target for external links.
     profileLinks: [
-      { label: 'Resume', href: '/resume', window: 'preview' },
+      { label: 'Resume', href: '/Usha-Sophea-Janardhan-Resume.pdf', external: true },
       { label: 'GitHub', href: '#', external: true },
       { label: 'LinkedIn', href: '#', external: true },
       { label: 'Contact', href: '/contact', window: 'mail' },
@@ -22,7 +22,7 @@ export const desktopConfig = {
     items: [
       { label: 'Projects', href: '/projects', window: 'finder' },
       { label: 'About', href: '/about', window: 'notes' },
-      { label: 'Experience', href: '/resume', window: 'preview' },
+      { label: 'Experience', href: '/experience', window: 'maps' },
     ],
   },
 

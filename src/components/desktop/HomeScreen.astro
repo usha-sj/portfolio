@@ -7,17 +7,17 @@ import { desktopConfig } from '../../config/desktop';
 import AppIcon from '../icons/AppIcon.astro';
 import FolderIcon from '../icons/FolderIcon.astro';
 
-const featured = (await getCollection('projects', (p) => p.data.featured)).sort((a, b) => a.data.order - b.data.order);
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const extraApps = [...dockApps, 'trash' as const].filter((id) => !mobileDockApps.includes(id)).map((id) => apps[id]);
 ---
 
 <ul class="home" aria-label={desktopConfig.homeScreenLabel}>
   {
-    featured.map((p) => (
+    projects.map((p) => (
       <li>
         <button type="button" class="home__app" data-open-window={`project/${p.id}`}>
           <span class="home__tile">
-            <FolderIcon />
+            <FolderIcon cover={p.data.cover} />
           </span>
           <span class="home__label">{p.data.title}</span>
         </button>
