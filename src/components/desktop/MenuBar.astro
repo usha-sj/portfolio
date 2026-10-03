@@ -1,7 +1,8 @@
 ---
 import { desktopConfig } from '../../config/desktop';
+import Lotus from '../../assets/lotus.svg';
 
-const { name, profileLinks, items } = desktopConfig.menuBar;
+const { logoLabel, profileLinks, items } = desktopConfig.menuBar;
 ---
 
 <header class="menubar" data-anim="menubar">
@@ -9,13 +10,14 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
     <div class="menu" data-menu>
       <button
         type="button"
-        class="menubar__item menubar__name"
+        class="menubar__item menubar__logo"
         id="profile-menu-button"
+        aria-label={logoLabel}
         aria-haspopup="menu"
         aria-expanded="false"
         aria-controls="profile-menu"
       >
-        {name}
+        <Lotus class="menubar__lotus" aria-hidden="true" focusable="false" />
       </button>
       <ul class="menu__list" id="profile-menu" role="menu" aria-labelledby="profile-menu-button" tabindex="-1" hidden>
         {
@@ -117,14 +119,32 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
   }
 
   .menubar__item:hover,
-  .menubar__name[aria-expanded='true'] {
+  .menubar__logo[aria-expanded='true'] {
     background: var(--color-menu-hover-bg);
     color: var(--color-menu-hover-text);
   }
 
-  .menubar__name,
   .menubar__app {
     font-weight: 700;
+  }
+
+  /* Lotus logo, sized like the macOS Apple logo (about the text's cap height) */
+  .menubar__logo {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--space-3);
+  }
+
+  .menubar__lotus {
+    display: block;
+    width: auto;
+    height: var(--menubar-logo-h);
+    fill: currentColor;
+  }
+
+  .menubar__logo:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
   }
 
   .menubar__app {
@@ -223,7 +243,7 @@ const { name, profileLinks, items } = desktopConfig.menuBar;
     });
   }
 
-  // ---- "Usha" dropdown ----
+  // ---- Lotus ("Usha") dropdown ----
   const menu = document.querySelector<HTMLElement>('[data-menu]');
   if (menu) {
     const button = menu.querySelector<HTMLButtonElement>('button')!;

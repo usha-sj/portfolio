@@ -1,6 +1,6 @@
 ---
-// Dock/home icons: macOS-style shapes and depth (gradient tile + top shine),
-// recoloured to the site palette. Original drawings, not Apple's artwork.
+// Dock/home icons: SVG redrawings of the current macOS icons (Finder, Notes, Maps, Mail,
+// Terminal) plus a mesh Trash. Colours are Apple-like placeholders in tokens.css (--icon-*).
 // To use your own image instead, set `icon` for that app in src/config/apps.ts.
 // Tile gradients: --icon-*-bg in tokens.css. Glyph gradients: IconDefs.astro.
 import { apps, type AppId } from '../../config/apps';
@@ -21,45 +21,71 @@ const custom = (apps[app] as { icon?: string }).icon;
     ) : (
       <svg viewBox="0 0 100 100">
         {app === 'finder' && (
-          <path
-            class="fi-fg"
-            d="M24 35a5 5 0 0 1 5-5h14l5 5h23a5 5 0 0 1 5 5v26a5 5 0 0 1-5 5H29a5 5 0 0 1-5-5z"
-          />
+          <>
+            {/* pale profile on the right; eyes and smile on top */}
+            <path
+              class="fi-face"
+              d="M54 7h25q14 0 14 14v58q0 14-14 14H57q-6 0-6-6V60.5q0-4-4-4h-5q-3.6 0-2.7-3.4L49 11q1-4 5-4z"
+            />
+            <rect class="fi-feature" x="25" y="30" width="3.6" height="9.4" rx="1.8" />
+            <rect class="fi-feature" x="68" y="30" width="3.6" height="9.4" rx="1.8" />
+            <path class="fi-smile" d="M19.5 66Q48 92 76 66" />
+          </>
         )}
         {app === 'notes' && (
           <>
-            <rect class="no-band" width="100" height="26" />
-            <path class="no-lines" d="M14 44h72M14 58h72M14 72h72M14 86h72" />
+            <rect class="no-shadow" y="25" width="100" height="2.6" />
+            <rect class="no-band" width="100" height="25" />
+            <path class="no-perf" d="M1.25 30.4H100" />
+            <path class="no-lines" d="M0 50h100M0 75h100" />
           </>
         )}
         {app === 'maps' && (
           <>
-            {/* folded paper map: three panels, a dashed route and a pin */}
-            <path class="mp-panel" d="M14 22l22-7v63l-22 7z" />
-            <path class="mp-panel mp-panel--mid" d="M36 15l28 7v63l-28-7z" />
-            <path class="mp-panel" d="M64 22l22-7v63l-22 7z" />
-            <path class="mp-route" d="M22 70c10-6 14-20 26-22s18 10 30-4" />
-            <path class="mp-pin" d="M74 26a9 9 0 0 1 9 9c0 7-9 15-9 15s-9-8-9-15a9 9 0 0 1 9-9z" />
-            <circle class="mp-pin-dot" cx="74" cy="35" r="3.2" />
+            {/* roads are the tile colour; regions get white edges */}
+            <path class="mp-green mp-edge" d="M-5 -5H23V24.7L-5 6.8z" />
+            <path class="mp-green mp-edge" d="M53 -5H105V77.2L53 43.9z" />
+            <circle class="mp-ring mp-edge" cx="100" cy="0" r="37.5" />
+            <circle class="mp-green mp-edge" cx="100" cy="0" r="21" />
+            <path class="mp-pink mp-edge" d="M-5 38.8L23 56.7V105H-5z" />
+            <path class="mp-yellow mp-edge" d="M53 75.9L97 104H53z" />
+            <path class="mp-lane" d="M26.2 -2V44M49.8 -2V44" />
+            <rect class="mp-route" x="28.4" y="-2" width="19.4" height="48" />
+            <g class="mp-badge">
+              <circle class="mp-badge-ring" cx="38" cy="62" r="25" />
+              <circle class="mp-badge-fill" cx="38" cy="62" r="21.2" />
+              <path class="mp-arrow" d="M38 46.5l10 27.2-10-9-10 9z" />
+            </g>
           </>
         )}
         {app === 'mail' && (
           <>
-            <rect class="ma-fg" x="18" y="29" width="64" height="42" rx="5" />
-            <path class="ma-flap" d="m21 33 29 21 29-21" />
+            <rect class="ma-body" x="20" y="30" width="60" height="40" rx="5" />
+            <path class="ma-lower" d="M22.5 68.5L50 48.5l27.5 20z" />
+            <path class="ma-flap" d="M22 31.5h56L56 52q-6 5.5-12 0z" />
+            <rect class="ma-rim" x="20" y="30" width="60" height="40" rx="5" />
           </>
         )}
         {app === 'terminal' && (
           <>
-            <rect class="te-screen" x="10" y="13" width="80" height="74" rx="9" />
-            <path class="te-fg" d="m24 36 12 10-12 10M42 60h16" />
+            <path class="te-chevron" d="M20 21.5l16.5 10-16.5 10" />
+            <path class="te-cursor" d="M40.5 50h19.5" />
           </>
         )}
         {app === 'trash' && (
           <>
-            <path class="tr-body" d="M22 24h56l-6 66a5 5 0 0 1-5 4H33a5 5 0 0 1-5-4z" />
-            <path class="tr-rib" d="M36 30l2 58M50 30v58M64 30l-2 58M27 46h46M28 64h44" />
-            <rect class="tr-lid" x="18" y="16" width="64" height="10" rx="5" />
+            {/* frosted bin, full of crumpled paper */}
+            <ellipse class="tr-inside" cx="50" cy="15" rx="34" ry="6" />
+            <path class="tr-paper" d="M22 15l3-8 9-3 4 5 6-6 8 2 2 7z" />
+            <path class="tr-paper tr-paper--shade" d="M45 15l2-9 10-4 7 3 6-3 8 6-3 7z" />
+            <path class="tr-bit tr-bit--blue" d="M39 10l6-3 5 2-4 4z" />
+            <path class="tr-bit tr-bit--green" d="M46 9l5-2 3 3-5 2z" />
+            <path class="tr-bit tr-bit--orange" d="M57 7l8-1 2 6-8 2z" />
+            <path class="tr-paper" d="M30 16l5-6 8 1 4-3 6 4-2 5z" />
+            <path class="tr-paper" d="M62 16l3-6 8-1 6 4-2 4z" />
+            <path class="tr-body" d="M16 15a34 6 0 0 0 68 0l-5 72q-.6 8-8.5 8h-41q-7.9 0-8.5-8z" />
+            <path class="tr-body-shade" d="M16 15a34 6 0 0 0 68 0l-5 72q-.6 8-8.5 8h-41q-7.9 0-8.5-8z" />
+            <ellipse class="tr-rim" cx="50" cy="15" rx="34" ry="6" />
           </>
         )}
       </svg>
@@ -99,7 +125,7 @@ const custom = (apps[app] as { icon?: string }).icon;
   .app-icon--notes    { background: var(--icon-notes-bg); }
   .app-icon--maps     { background: var(--icon-maps-bg); }
   .app-icon--mail     { background: var(--icon-mail-bg); }
-  .app-icon--terminal { background: var(--icon-terminal-bg); }
+  .app-icon--terminal { background: var(--icon-terminal-bg); box-shadow: var(--shadow-icon), var(--icon-terminal-rim); }
 
   /* Trash and custom images: no tile */
   .app-icon--trash,
@@ -118,24 +144,42 @@ const custom = (apps[app] as { icon?: string }).icon;
     filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.2));
   }
 
-  .fi-fg { fill: var(--color-icon-finder-fg); filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.2)); }
+  .fi-face { fill: url(#grad-finder-face); stroke: var(--color-icon-finder-face-rim); stroke-width: 0.8; }
+  .fi-feature { fill: var(--color-icon-finder-features); filter: var(--icon-glyph-shadow); }
+  .fi-smile { fill: none; stroke: var(--color-icon-finder-features); stroke-width: 2.5; stroke-linecap: round; filter: var(--icon-glyph-shadow); }
 
   .no-band { fill: url(#grad-notes-band); }
-  .no-lines { stroke: var(--color-icon-notes-lines); stroke-width: 2.5; stroke-dasharray: 2 4; }
+  .no-shadow { fill: url(#grad-notes-shadow); }
+  .no-perf { stroke: var(--color-icon-notes-perf); stroke-width: 2.5; stroke-dasharray: 0 4.17; stroke-linecap: round; }
+  .no-lines { stroke: var(--color-icon-notes-lines); stroke-width: 1.7; }
 
-  .mp-panel { fill: var(--color-icon-maps-paper); }
-  .mp-panel--mid { fill: var(--color-icon-maps-fold); }
-  .mp-route { fill: none; stroke: var(--color-icon-maps-route); stroke-width: 3; stroke-dasharray: 5 4; stroke-linecap: round; }
-  .mp-pin { fill: var(--color-icon-maps-pin); filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25)); }
-  .mp-pin-dot { fill: var(--color-icon-maps-paper); }
+  .mp-edge { stroke: var(--color-icon-maps-edge); stroke-width: 1.4; }
+  .mp-green { fill: url(#grad-maps-green); }
+  .mp-ring { fill: var(--color-icon-maps-ring); }
+  .mp-pink { fill: var(--color-icon-maps-pink); }
+  .mp-yellow { fill: var(--color-icon-maps-yellow); }
+  .mp-lane { stroke: var(--color-icon-maps-edge); stroke-width: 1.4; }
+  .mp-route { fill: url(#grad-maps-route); }
+  .mp-badge { filter: var(--icon-badge-shadow); }
+  .mp-badge-ring { fill: var(--color-icon-maps-edge); }
+  .mp-badge-fill { fill: url(#grad-maps-badge); }
+  .mp-arrow { fill: var(--color-icon-maps-arrow); stroke: var(--color-icon-maps-arrow); stroke-width: 1.6; stroke-linejoin: round; }
 
-  .ma-fg { fill: var(--color-icon-mail-fg); filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.25)); }
-  .ma-flap { fill: none; stroke: var(--color-icon-mail-fold); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .ma-body { fill: url(#grad-mail-body); }
+  .ma-lower { fill: url(#grad-mail-lower); stroke: var(--color-icon-mail-rim); stroke-width: 0.8; stroke-linejoin: round; }
+  .ma-flap { fill: url(#grad-mail-flap); stroke: var(--color-icon-mail-rim); stroke-width: 0.8; stroke-linejoin: round; filter: var(--icon-glyph-shadow); }
+  .ma-rim { fill: none; stroke: var(--color-icon-mail-rim); stroke-width: 1.2; }
 
-  .te-screen { fill: var(--color-icon-terminal-screen); }
-  .te-fg { fill: none; stroke: var(--color-icon-terminal-fg); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+  .te-chevron { fill: none; stroke: url(#grad-terminal-chevron); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; filter: var(--icon-glyph-shadow); }
+  .te-cursor { fill: none; stroke: var(--color-icon-terminal-cursor); stroke-width: 3; stroke-linecap: round; }
 
-  .tr-body { fill: url(#grad-trash); }
-  .tr-rib { fill: none; stroke: var(--color-icon-trash-rib); stroke-width: 2; opacity: 0.6; }
-  .tr-lid { fill: var(--color-icon-trash-lid); }
+  .tr-inside { fill: var(--color-icon-trash-inside); }
+  .tr-paper { fill: var(--color-icon-trash-paper); stroke: var(--color-icon-trash-paper-edge); stroke-width: 0.6; stroke-linejoin: round; }
+  .tr-paper--shade { fill: var(--color-icon-trash-paper-shade); }
+  .tr-bit--blue { fill: var(--color-icon-trash-bit-blue); }
+  .tr-bit--green { fill: var(--color-icon-trash-bit-green); }
+  .tr-bit--orange { fill: var(--color-icon-trash-bit-orange); }
+  .tr-body { fill: url(#grad-trash); opacity: 0.94; }
+  .tr-body-shade { fill: url(#grad-trash-sides); }
+  .tr-rim { fill: none; stroke: var(--color-icon-trash-rim); stroke-width: 1.6; }
 </style>

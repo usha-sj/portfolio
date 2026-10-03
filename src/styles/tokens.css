@@ -94,29 +94,64 @@
   --color-tooltip-border: rgb(29 27 24 / 0.12);
 
   /* ---- App icons: macOS-style shapes and depth, recoloured to the site palette ---- */
-  --icon-shine: linear-gradient(to bottom, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0) 55%);
+  --icon-shine: none; /* was a glossy top highlight; Apple's current icons have none */
   --icon-edge: inset 0 0 0 0.5px rgb(0 0 0 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.35);
-  --icon-finder-bg: linear-gradient(100deg, var(--ink-700) 0 50%, var(--ink-300) 50% 100%);
-  --color-icon-finder-fg: var(--oat-50);
-  --icon-notes-bg: linear-gradient(to bottom, var(--white), var(--oat-100));
-  --color-icon-notes-band-top: var(--burgundy-300);
-  --color-icon-notes-band-bottom: var(--burgundy-500);
-  --color-icon-notes-lines: var(--oat-300);
-  --icon-maps-bg: linear-gradient(to bottom, var(--ink-300), var(--ink-500));
-  --color-icon-maps-paper: var(--oat-50);
-  --color-icon-maps-fold: var(--oat-200);
-  --color-icon-maps-route: var(--ink-500);
-  --color-icon-maps-pin: var(--burgundy-500);
-  --icon-mail-bg: linear-gradient(to bottom, var(--ink-500), var(--ink-700));
-  --color-icon-mail-fg: var(--oat-50);
-  --color-icon-mail-fold: var(--oat-200);
-  --icon-terminal-bg: linear-gradient(to bottom, var(--neutral-600), var(--neutral-900));
-  --color-icon-terminal-screen: var(--neutral-900);
-  --color-icon-terminal-fg: var(--oat-100);
-  --color-icon-trash-top: var(--oat-50);
-  --color-icon-trash-bottom: var(--neutral-400);
-  --color-icon-trash-rib: var(--neutral-600);
-  --color-icon-trash-lid: var(--oat-300);
+  /* App icons: Apple's colours for now (swap freely) */
+  --icon-glyph-shadow: drop-shadow(0 0.6px 0.8px rgb(0 0 0 / 0.22));
+  --icon-badge-shadow: drop-shadow(0 2px 3px rgb(0 0 0 / 0.28));
+  /* Finder: blue tile, pale face on the right */
+  --icon-finder-bg: linear-gradient(to bottom, #5cc6f8, #2e6ff1);
+  --color-icon-finder-face-top: #ffffff;
+  --color-icon-finder-face-bottom: #9ec4f4;
+  --color-icon-finder-face-rim: #d8edff;
+  --color-icon-finder-features: #17202e;
+  /* Notes: white page, yellow band, dotted perforation, grey rules */
+  --icon-notes-bg: #fdfdfd;
+  --color-icon-notes-band-top: #f2d981;
+  --color-icon-notes-band-bottom: #f4c42c;
+  --color-icon-notes-band-shadow: rgb(0 0 0 / 0.38);
+  --color-icon-notes-perf: #c1c0c5;
+  --color-icon-notes-lines: #c5c4c7;
+  /* Maps */
+  --icon-maps-bg: #efeef3;
+  --color-icon-maps-green-top: #82ea83;
+  --color-icon-maps-green-bottom: #35cf5a;
+  --color-icon-maps-ring: #d2d1d6;
+  --color-icon-maps-pink: #eb89c6;
+  --color-icon-maps-yellow: #f6c700;
+  --color-icon-maps-edge: #ffffff;
+  --color-icon-maps-route-top: #3290f8;
+  --color-icon-maps-route-bottom: #3a77ef;
+  --color-icon-maps-badge-top: #4b8cf9;
+  --color-icon-maps-badge-bottom: #2e6cf3;
+  --color-icon-maps-arrow: #ffffff;
+  /* Mail: blue tile, frosted envelope */
+  --icon-mail-bg: linear-gradient(to bottom, #5cc0f7, #1d6af5);
+  --color-icon-mail-body-top: #c9dcf6;
+  --color-icon-mail-body-bottom: #7ea6e6;
+  --color-icon-mail-lower-top: #e4eefb;
+  --color-icon-mail-lower-bottom: #aecbf2;
+  --color-icon-mail-flap-top: #ffffff;
+  --color-icon-mail-flap-bottom: #e3edfa;
+  --color-icon-mail-rim: #f4f8ff;
+  /* Terminal: Apple's own */
+  --icon-terminal-bg: linear-gradient(to bottom, #2e2e2e, #191919);
+  --icon-terminal-rim: inset 0 0 0 1px rgb(255 255 255 / 0.08), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  --color-icon-terminal-chevron-top: #f4f4f4;
+  --color-icon-terminal-chevron-bottom: #b9b9b9;
+  --color-icon-terminal-cursor: #9c9c9c;
+  /* Trash: frosted white bin with crumpled paper */
+  --color-icon-trash-top: #f4f4f6;
+  --color-icon-trash-bottom: #e2e2e6;
+  --color-icon-trash-side: #b8b8be;
+  --color-icon-trash-rim: #ffffff;
+  --color-icon-trash-inside: #a9a9b0;
+  --color-icon-trash-paper: #fafafa;
+  --color-icon-trash-paper-shade: #e4e4e8;
+  --color-icon-trash-paper-edge: #b0b0b6;
+  --color-icon-trash-bit-blue: #3b9df5;
+  --color-icon-trash-bit-green: #59c96b;
+  --color-icon-trash-bit-orange: #ef7d3a;
   --color-home-folder-tile: var(--oat-200); /* phone home-screen tile behind project folders */
 
   /* Folders and files (macOS shapes, ink blue) */
@@ -322,6 +357,7 @@
 
   /* ---- Layout ---- */
   --menubar-h: 26px;
+  --menubar-logo-h: 12px; /* lotus logo; ~cap height of 13px menu text, like the Apple logo */
 
   /* Widgets snap to a grid of square units, like macOS desktop widgets.
      small = 1x1, medium = 2x1, large = 2x2. --widget-unit is set in Desktop.astro

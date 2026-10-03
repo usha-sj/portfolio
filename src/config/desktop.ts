@@ -10,9 +10,13 @@ export const desktopConfig = {
 
   menuBar: {
     name: 'Usha',
-    // Dropdown under "Usha". `window` opens that app's window (see src/config/apps.ts);
+    // The lotus logo on the far left (like the Apple logo) opens the dropdown below.
+    // Swap the artwork in src/assets/lotus.svg (keep fill="currentColor").
+    logoLabel: 'Usha menu',
+    // Dropdown under the lotus. `window` opens that app's window (see src/config/apps.ts);
     // `href` is the fallback URL and the target for external links.
     profileLinks: [
+      { label: 'About Usha', href: '/about', window: 'notes' },
       { label: 'Resume', href: '/Usha-Sophea-Janardhan-Resume.pdf', external: true },
       { label: 'GitHub', href: '#', external: true },
       { label: 'LinkedIn', href: '#', external: true },
