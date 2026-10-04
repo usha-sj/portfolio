@@ -5,7 +5,9 @@
 // no <script> here because this renders inside a <template>).
 import { getCollection } from 'astro:content';
 import { mapsConfig as c } from '../../config/maps';
-import { mapScale, mapSize, stops } from '../../data/route';
+import { highwayShields, mapLabels } from '../../data/mapLabels';
+import { mapScale, mapSize, seed, stops as routeStops } from '../../data/route';
+import { FONT, PIN, POI_ICON, getMap } from '../../lib/mapgen';
 
 const entries = (await getCollection('experience')).sort((a, b) => a.data.start.localeCompare(b.data.start));
 const entriesFor = (stopId: string) => entries.filter((e) => e.data.stop === stopId);
@@ -36,27 +38,45 @@ const linkParts = (text: string) => {
   return parts;
 };
 
-// Smooth curve through every stop (Catmull-Rom → cubic Bézier)
-const pts = stops.map((s) => [s.x, s.y]);
-const routeD = pts
-  .map(([x, y], i) => {
-    if (i === 0) return `M${x} ${y}`;
-    const p0 = pts[Math.max(i - 2, 0)];
-    const p1 = pts[i - 1];
-    const p2 = pts[i];
-    const p3 = pts[Math.min(i + 1, pts.length - 1)];
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    return `C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} ${x} ${y}`;
-  })
-  .join(' ');
+// The map background, stop positions, route and place names are generated at build time
+// from a seed (src/lib/mapgen.ts). Same seed, same map.
+const map = getMap({ seed, size: mapSize, stops: routeStops, labels: mapLabels, shields: highwayShields });
+const stops = map.stops;
+
+// Pin glyph: the stop's `glyph`, else its most common entry type (ties: work > research > education > leadership)
+const glyphOrder = ['work', 'research', 'education', 'leadership'] as const;
+const glyphFor = (stop: (typeof stops)[number]) => {
+  if (stop.glyph) return stop.glyph;
+  const counts = new Map<string, number>();
+  entriesFor(stop.id).forEach((e) => counts.set(e.data.type, (counts.get(e.data.type) ?? 0) + 1));
+  return [...glyphOrder].sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0))[0];
+};
+// Pin glyphs (white strokes, centred on 0,0, ~16 units)
+const pinGlyphs: Record<(typeof glyphOrder)[number], string> = {
+  work: 'M-6.5-3h13v9h-13zM-2.5-3v-2.2h5V-3M-6.5 1h13',
+  research: 'M-2.5-6.5h5M-1.5-6.5V-2L-6.5 6h13L1.5-2v-4.5M-4.2 2.5h8.4',
+  education: 'M0-5.5 8-2 0 1.5-8-2zM-4.5-.5v3.5c2.5 2 6.5 2 9 0V-.5M8-2v4.5',
+  leadership:
+    'M-5.3-3.4a2.3 2.3 0 1 0 4.6 0a2.3 2.3 0 1 0-4.6 0M-7.5 5.5c.3-3 2-4.4 4.5-4.4s4.2 1.4 4.5 4.4M1.9-3a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0-3.8 0M3 1.1c.3-.1.6-.1.8-.1 2.2 0 3.7 1.3 4 4.5',
+};
+// POI badge glyphs (white, ~12 units). `fill` = solid shape, otherwise drawn as lines.
+const poiGlyphs: Record<string, { d: string; fill?: boolean }> = {
+  park: { d: 'M0-6.5a4.6 4.6 0 0 1 4.4 6 3.4 3.4 0 0 1-2.4 4.9H.9V8h-1.8V4.4H-2a3.4 3.4 0 0 1-2.4-4.9A4.6 4.6 0 0 1 0-6.5z', fill: true },
+  sports: { d: 'M-5.5 0a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0-11 0M-5.2-1.8c2.4 1 4.4 3.2 5 6.9M5.2-1.8c-2.4 1-4.4 3.2-5 6.9' },
+  school: { d: 'M0-5.5 8-2 0 1.5-8-2zM-4.5-.5v3.5c2.5 2 6.5 2 9 0V-.5' },
+  cafe: { d: 'M-5.5-2h9v4.5a4.5 4.5 0 0 1-9 0zM3.5-1h1.3a2 2 0 0 1 0 4H3.3M-3-6c0 1 .8 1.2.8 2.2M0-6c0 1 .8 1.2.8 2.2' },
+  food: { d: 'M-3.5-6v12M-5.5-6v3.5a2 2 0 0 0 4 0V-6M3.5 6V-6c-1.8 1-2.6 3-2.6 5.5h2.6' },
+  spa: { d: 'M0-6.5C2-3.5 4.5-1 4.5 1.8a4.5 4.5 0 0 1-9 0C-4.5-1-2-3.5 0-6.5z', fill: true },
+  landmark: { d: 'M0-6.5l1.9 4 4.4.5-3.3 3 .9 4.4L0 3.2l-3.9 2.2.9-4.4-3.3-3 4.4-.5z', fill: true },
+};
+const fontFor = (l: (typeof map.labels)[number]) => (l.type === 'water' && l.kind === 'upright' ? FONT.lake : FONT[l.type]);
 
 // Skills filter: every tag used by any entry
 const skills = [...new Set(entries.flatMap((e) => e.data.tags))].sort((a, b) => a.localeCompare(b));
 const types = [...new Set(entries.map((e) => e.data.type))];
 ---
 
-<div class="maps" data-maps data-scale={mapScale} data-stops={JSON.stringify(stops.map(({ id, x, y }) => ({ id, x, y })))}>
+<div class="maps" data-maps data-scale={mapScale} data-stops={JSON.stringify(stops.map(({ id, x, y }) => ({ id, x: Math.round(x), y: Math.round(y) })))}>
   <!-- Sidebar (a draggable bottom sheet on phones) -->
   <aside class="maps__sidebar" data-maps-sheet aria-label={c.directionsHeading}>
     <div class="maps__handle" data-maps-handle aria-hidden="true" title={c.sheetHandle}><span></span></div>
@@ -95,7 +115,7 @@ const types = [...new Set(entries.map((e) => e.data.type))];
                       {stop.step !== 'here' && `: ${stop.city}`}
                     </span>
                     <span class="directions__meta">
-                      {stop.dates} · {stop.caption}
+                      {stop.dates}
                     </span>
                   </span>
                 </button>
@@ -149,7 +169,7 @@ const types = [...new Set(entries.map((e) => e.data.type))];
               class="place-card"
               id={`maps-card-${stop.id}`}
               data-place-card={stop.id}
-              data-label={[stop.city + (stop.country ? `, ${stop.country}` : ''), stop.dates, stop.caption].join('. ')}
+              data-label={[stop.city + (stop.country ? `, ${stop.country}` : ''), stop.dates].join('. ')}
               aria-labelledby={`maps-card-title-${stop.id}`}
               hidden
             >
@@ -161,7 +181,7 @@ const types = [...new Set(entries.map((e) => e.data.type))];
                     {stop.country && <span class="place-card__country">, {stop.country}</span>}
                   </h3>
                   <p class="place-card__meta">
-                    {stop.dates} · {stop.caption}
+                    {stop.dates}
                   </p>
                 </div>
                 <button type="button" class="place-card__close" data-card-close aria-label={c.closeCard}>
@@ -260,48 +280,138 @@ const types = [...new Set(entries.map((e) => e.data.type))];
   <div class="maps__map" data-maps-viewport>
     <div class="maps__canvas" data-maps-canvas style={`width:${mapSize.width * mapScale}px;height:${mapSize.height * mapScale}px`}>
       <svg class="maps__svg" viewBox={`0 0 ${mapSize.width} ${mapSize.height}`} aria-hidden="true">
-        <defs>
-          <mask id="maps-route-mask" maskUnits="userSpaceOnUse">
-            <path class="maps__route-mask" data-route-mask d={routeD} />
-          </mask>
-        </defs>
-
-        <!-- Decorative paper-map details -->
-        <path class="maps__water" d="M0 820c180-40 320 30 520 0s300-90 520-40 360 120 600 70 380-60 660-30V1000H0z" />
-        <path class="maps__water" d="M1380 0c40 80 160 120 300 110s220-70 360-40 200 40 260 20V0z" />
-        <g class="maps__contours">
-          <path d="M80 200c120-60 260-40 360 20s200 40 300-10" />
-          <path d="M60 250c140-60 300-40 400 30s220 50 320-10" />
-          <path d="M1000 160c90-50 210-40 290 10s170 30 240-20" />
-          <path d="M980 210c110-50 230-40 320 20s180 40 260-20" />
-          <path d="M1560 860c110-60 240-50 330 0s190 40 290-10" />
-          <path d="M640 900c90-40 200-30 280 10s150 20 220-20" />
+        <!-- Generated background (see src/lib/mapgen.ts) -->
+        <rect class="map-land" width={mapSize.width} height={mapSize.height} />
+        <g class="map-landuse">{map.landuse.map((l) => <path class={`map-landuse--${l.kind}`} d={l.d} />)}</g>
+        <g class="map-streets">{map.streetsD.map((d) => <path d={d} />)}</g>
+        <g class="map-parks">{map.parksD.map((d) => <path d={d} />)}</g>
+        <!-- Water twice: shoreline strokes, then fills on top, so the lake/river join has no seam -->
+        <g class="map-water map-water--shore">
+          <path d={map.lakeD} />
+          <path d={map.riverD} />
         </g>
-        <g class="maps__compass" transform={`translate(${mapSize.width - 110} 110)`}>
-          <circle r="42" />
-          <path d="M0-34 8 0 0 34-8 0z" />
-          <text y="-48" text-anchor="middle">N</text>
+        <g class="map-water">
+          <path d={map.lakeD} />
+          <path d={map.riverD} />
+        </g>
+        <g class="map-roads">
+          {map.roads.filter((r) => r.kind !== 'connector').map((r) => <path class:list={['map-road-casing', `map-road-casing--${r.kind}`]} d={r.d} />)}
+          {map.bridges.map((b) => <path class:list={['map-bridge-shadow', `map-bridge-shadow--${b.kind}`]} d={b.d} />)}
+          {map.bridges.map((b) => <path class:list={['map-bridge', `map-bridge--${b.kind}`]} d={b.d} />)}
+          {map.roads.map((r) => <path class:list={['map-road', `map-road--${r.kind}`]} d={r.d} />)}
         </g>
 
-        <!-- Route: dashed line revealed by the mask (DrawSVG draws the mask) -->
-        <path class="maps__route" d={routeD} mask="url(#maps-route-mask)" />
-        <path class="maps__route-guide" data-route-guide d={routeD} />
+        <!-- Route: Apple Maps directions line (DrawSVG draws both strokes in) -->
+        <path class="maps__route-casing" data-route-casing d={map.routeD} />
+        <path class="maps__route" data-route-guide d={map.routeD} />
 
-        <!-- Pins -->
+        <!-- Highway shields -->
+        {
+          map.shields.map((sh) => (
+            <g transform={`translate(${sh.x} ${sh.y})`}>
+              <g data-upright="free">
+                <rect class="map-shield" x={-(14 + sh.text.length * 4.5)} y="-12" width={28 + sh.text.length * 9} height="24" rx="6" />
+                <text class="map-shield__text" text-anchor="middle" dominant-baseline="central" font-size="15">
+                  {sh.text}
+                </text>
+              </g>
+            </g>
+          ))
+        }
+
+        <!-- Place names. Path labels follow their road/street/river; the rest stay upright. -->
+        <g class="map-labels">
+          {
+            map.labels.map((l, i) => (
+              <g
+                class:list={['ml', `ml--${l.type}`, l.category && `ml--${l.category}`, c.revealOnZoom.includes(l.type) && 'ml--zoom']}
+                transform={`translate(${l.x} ${l.y})`}
+                data-map-label
+                data-x={l.x}
+                data-y={l.y}
+                data-w={l.w}
+                data-h={l.h}
+              >
+                {l.kind === 'path' ? (
+                  <g data-upright="path" data-angle={l.angle}>
+                    <path class="ml__path" id={`maps-lp-${i}`} d={l.pathD} />
+                    <path class="ml__path" id={`maps-lp-${i}-r`} d={l.pathRevD} />
+                    <text font-size={fontFor(l)}>
+                      <textPath href={`#maps-lp-${i}`} data-path-id={`maps-lp-${i}`} startOffset="50%" text-anchor="middle" dominant-baseline="central">
+                        {l.text}
+                      </textPath>
+                    </text>
+                  </g>
+                ) : l.category ? (
+                  // Apple Maps-style category badge, then the name
+                  <g data-upright="free">
+                    <g class="ml__badge" transform={`translate(${-l.w / 2 + POI_ICON.r} 0)`}>
+                      <circle r={POI_ICON.r} />
+                      <path class:list={[poiGlyphs[l.category].fill && 'is-fill']} transform="scale(1.1)" d={poiGlyphs[l.category].d} />
+                    </g>
+                    <text x={-l.w / 2 + POI_ICON.r * 2 + POI_ICON.gap} dominant-baseline="central" font-size={fontFor(l)}>
+                      {l.text}
+                    </text>
+                  </g>
+                ) : (
+                  <g data-upright="free">
+                    <text text-anchor="middle" dominant-baseline="central" font-size={fontFor(l)}>
+                      {l.text}
+                    </text>
+                  </g>
+                )}
+              </g>
+            ))
+          }
+        </g>
+
+        <!-- Pins (stay upright and the same size when the map rotates/zooms) -->
         {
           stops.map((stop, i) => (
-            <g class="maps__pin-wrap" transform={`translate(${stop.x} ${stop.y})`}>
-              <g class:list={['maps__pin', stop.step === 'here' && 'maps__pin--here']} data-pin={stop.id} data-stop-index={i}>
-                <path class="maps__pin-shape" d="M0 0c-6-12-18-20-18-34a18 18 0 0 1 36 0c0 14-12 22-18 34z" />
-                <circle class="maps__pin-dot" cy="-34" r="7" />
-                <g class="maps__label" transform="translate(0 30)">
-                  <text class="maps__label-city" text-anchor="middle">
-                    {stop.city}
-                  </text>
-                  <text class="maps__label-caption" y="26" text-anchor="middle">
-                    {stop.caption}
-                  </text>
-                </g>
+            <g transform={`translate(${Math.round(stop.x)} ${Math.round(stop.y)})`}>
+              <g data-upright="free">
+                {stop.step === 'here' ? (
+                  // "You are here": Apple's blue location dot
+                  <g class="maps__pin maps__pin--here" data-pin={stop.id} data-stop-index={i}>
+                    <g class="maps__puck" data-pin-body data-puck>
+                      <circle class="maps__puck-halo" r="30" data-puck-halo />
+                      <circle class="maps__puck-ring" r="15" />
+                      <circle class="maps__puck-dot" r="10.5" />
+                    </g>
+                    <text
+                      class="maps__pin-label"
+                      x={stop.labelSide === 'right' ? 24 : -24}
+                      y={0}
+                      text-anchor={stop.labelSide === 'right' ? 'start' : 'end'}
+                      dominant-baseline="central"
+                      font-size={FONT.stop}
+                    >
+                      <tspan class="maps__pin-city">{stop.city}</tspan>
+                      <tspan class="maps__pin-dates"> · {stop.dates.replace(/\s*–\s*/g, '–')}</tspan>
+                    </text>
+                  </g>
+                ) : (
+                  <g class="maps__pin" data-pin={stop.id} data-stop-index={i}>
+                    <g class="maps__pin-body" data-pin-body>
+                      <path
+                        class="maps__pin-shape"
+                        d={`M-6.5 ${-PIN.head + 16.8}L0 0L6.5 ${-PIN.head + 16.8}A${PIN.r} ${PIN.r} 0 1 0 -6.5 ${-PIN.head + 16.8}Z`}
+                      />
+                      <path class="maps__pin-glyph" transform={`translate(0 ${-PIN.head}) scale(1.15)`} d={pinGlyphs[glyphFor(stop)]} />
+                    </g>
+                    <text
+                      class="maps__pin-label"
+                      x={stop.labelSide === 'right' ? PIN.r * 1.45 + PIN.labelGap : -(PIN.r * 1.45 + PIN.labelGap)}
+                      y={-PIN.head}
+                      text-anchor={stop.labelSide === 'right' ? 'start' : 'end'}
+                      dominant-baseline="central"
+                      font-size={FONT.stop}
+                    >
+                      <tspan class="maps__pin-city">{stop.city}</tspan>
+                      <tspan class="maps__pin-dates"> · {stop.dates.replace(/\s*–\s*/g, '–')}</tspan>
+                    </text>
+                  </g>
+                )}
               </g>
             </g>
           ))
@@ -309,10 +419,36 @@ const types = [...new Set(entries.map((e) => e.data.type))];
 
         <!-- "You" marker that travels along the route -->
         <g class="maps__marker" data-maps-marker>
-          <circle class="maps__marker-halo" r="20" />
-          <circle class="maps__marker-dot" r="9" />
+          <g data-upright="free">
+            <circle class="maps__marker-halo" r="22" />
+            <circle class="maps__marker-dot" r="10" />
+          </g>
         </g>
       </svg>
+    </div>
+
+    <!-- Apple Maps-style controls, top right -->
+    <div class="maps__tools">
+      <div class="maps__tool-group">
+        <button type="button" class="maps__tool" data-maps-zoom-in aria-label={c.zoomIn} title={c.zoomIn}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+        </button>
+        <button type="button" class="maps__tool" data-maps-zoom-out aria-label={c.zoomOut} title={c.zoomOut}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" /></svg>
+        </button>
+      </div>
+      <button type="button" class="maps__tool maps__tool--round maps__compass" data-maps-compass aria-label={c.compass} title={c.compass}>
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <g class="maps__compass-rose" data-compass-rose>
+            <path class="maps__compass-north" d="M16 2.5l3.2 6.5h-6.4z" />
+            <text x="16" y="16.5" text-anchor="middle" dominant-baseline="central">{c.compassNorth}</text>
+            <path class="maps__compass-south" d="M14.6 25h2.8v4h-2.8z" />
+          </g>
+        </svg>
+      </button>
+      <button type="button" class="maps__tool maps__tool--round" data-maps-recenter aria-label={c.recenter} title={c.recenter}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path class="maps__recenter-arrow" d="M13.5 2.5 2.5 7.2l4.8 1.5 1.5 4.8z" /></svg>
+      </button>
     </div>
 
     <div class="maps__controls">
@@ -499,8 +635,8 @@ const types = [...new Set(entries.map((e) => e.data.type))];
   }
 
   .directions__icon--here {
-    border-color: var(--color-maps-pin-here);
-    background: var(--color-maps-pin-here);
+    border-color: var(--color-maps-marker);
+    background: var(--color-maps-marker);
   }
 
   .directions__text {
@@ -545,10 +681,11 @@ const types = [...new Set(entries.map((e) => e.data.type))];
   /* ---- Map ---- */
   .maps__map {
     position: relative;
-    isolation: isolate; /* contains the map's 3D layer (Safari) so it can't cover the sheet */
+    isolation: isolate; /* keeps the map's layers from covering the sheet (Safari) */
     overflow: hidden;
-    background-color: var(--color-maps-paper);
-    touch-action: none; /* drag/swipe pans the map; the wheel is left alone */
+    overflow: clip; /* hidden can still be scrolled by focus/scrollIntoView, which shifted the controls */
+    background-color: var(--color-map-land); /* land carries on past the edges when rotated */
+    touch-action: none; /* drag pans, pinch/twist zoom and rotate (maps.ts) */
     cursor: grab;
   }
 
@@ -556,7 +693,7 @@ const types = [...new Set(entries.map((e) => e.data.type))];
     cursor: grabbing;
   }
 
-  /* Safari: the map is moved with plain 2D transforms (force3D: false in maps.ts) and nothing
+  /* Safari: the map moves with plain 2D transforms (force3D: false in maps.ts) and nothing
      here creates 3D layers or backdrop blur. Composited layers made Safari paint the map
      over the place card regardless of z-index. */
   .maps__canvas {
@@ -564,8 +701,6 @@ const types = [...new Set(entries.map((e) => e.data.type))];
     top: 0;
     left: 0;
     z-index: 0;
-    background-color: var(--color-maps-paper);
-    background-image: var(--maps-grid);
   }
 
   .maps__svg {
@@ -573,33 +708,102 @@ const types = [...new Set(entries.map((e) => e.data.type))];
     width: 100%;
     height: 100%;
     overflow: visible;
+    /* Set by maps.ts as you zoom: lines thin out a little so zooming in doesn't bloat them */
+    --map-k: 1;
+    --route-k: 1;
   }
 
-  .maps__water { fill: var(--color-maps-water); }
-  .maps__contours path { fill: none; stroke: var(--color-maps-contour); stroke-width: 2; }
-  .maps__compass circle { fill: var(--color-maps-label-bg); stroke: var(--color-maps-contour); stroke-width: 2; }
-  .maps__compass path { fill: var(--color-maps-route); opacity: 0.7; }
-  .maps__compass text { fill: var(--color-maps-route); font: 700 18px var(--font-system); }
+  /* Generated background (stroke widths in map units). Land, parks, water and roads sit close
+     in brightness so the blue route and the labels stand out, like Apple Maps. */
+  .map-land { fill: var(--color-map-land); }
+  .map-landuse--residential { fill: var(--color-map-residential); }
+  .map-landuse--commercial { fill: var(--color-map-commercial); }
+  .map-streets path { fill: none; stroke: var(--color-map-street); stroke-width: calc(3px * var(--map-k)); stroke-linecap: round; stroke-linejoin: round; }
+  .map-parks path { fill: var(--color-map-park); stroke: var(--color-map-park); stroke-width: 2px; stroke-linejoin: round; }
+  .map-water path { fill: var(--color-map-water); }
+  .map-water--shore path { stroke: var(--color-map-water-edge); stroke-width: 6px; stroke-linejoin: round; }
 
-  .maps__route {
+  .map-roads path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .map-road-casing--arterial { stroke: var(--color-map-road-casing); stroke-width: calc(14px * var(--map-k)); }
+  .map-road-casing--highway { stroke: var(--color-map-highway-casing); stroke-width: calc(22px * var(--map-k)); }
+  .map-road--arterial { stroke: var(--color-map-road); stroke-width: calc(10px * var(--map-k)); }
+  .map-road--highway { stroke: var(--color-map-highway); stroke-width: calc(17px * var(--map-k)); }
+  .map-road--connector { stroke: var(--color-map-road); stroke-width: calc(6px * var(--map-k)); }
+  /* Bridges: the road continues over the water with an outline and a soft shadow */
+  .map-bridge-shadow { stroke: var(--color-map-bridge-shadow); stroke-linecap: butt !important; stroke-width: calc(24px * var(--map-k)); }
+  .map-bridge-shadow--highway { stroke-width: calc(32px * var(--map-k)); }
+  .map-bridge { stroke: var(--color-map-bridge-outline); stroke-linecap: butt !important; stroke-width: calc(16px * var(--map-k)); }
+  .map-bridge--highway { stroke-width: calc(24px * var(--map-k)); }
+
+  .map-shield { fill: var(--color-map-shield-bg); stroke: var(--color-map-shield-border); stroke-width: 1.5px; }
+  .map-shield__text { fill: var(--color-map-shield-text); font: 700 15px var(--font-system); }
+
+  /* Labels: Apple Maps typography, each with a soft halo in the land colour */
+  .ml text,
+  .maps__pin-label {
+    font-family: var(--font-system);
+    paint-order: stroke;
+    stroke: var(--color-map-halo);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    pointer-events: none;
+    user-select: none;
+  }
+  .ml__path { fill: none; stroke: none; }
+
+  .ml--neighbourhood text {
+    fill: var(--color-map-label-neighbourhood);
+    font-weight: 700;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.14em;
+  }
+  /* Streets and roads: small spaced capitals along the street */
+  .ml--street text,
+  .ml--road text {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .ml--street text { fill: var(--color-map-label-street); font-weight: 600; }
+  .ml--road text { fill: var(--color-map-label-road); font-weight: 700; }
+  .ml--water text { fill: var(--color-map-label-water); font-style: italic; font-weight: 500; }
+
+  /* POIs: category colour for the badge and the name */
+  .ml--park,
+  .ml--poi,
+  .ml--sports,
+  .ml--school,
+  .ml--cafe,
+  .ml--food,
+  .ml--spa,
+  .ml--landmark { --poi: var(--color-poi-park); }
+  .ml--sports { --poi: var(--color-poi-sports); }
+  .ml--school { --poi: var(--color-poi-school); }
+  .ml--cafe { --poi: var(--color-poi-cafe); }
+  .ml--food { --poi: var(--color-poi-food); }
+  .ml--spa { --poi: var(--color-poi-spa); }
+  .ml--landmark { --poi: var(--color-poi-landmark); }
+  .ml--park text,
+  .ml--poi text { fill: var(--poi); font-weight: 600; }
+  .ml__badge circle { fill: var(--poi); stroke: var(--color-map-halo); stroke-width: 2px; }
+  .ml__badge path { fill: none; stroke: var(--color-poi-glyph); stroke-width: 1.5px; stroke-linecap: round; stroke-linejoin: round; }
+  .ml__badge path.is-fill { fill: var(--color-poi-glyph); stroke: none; }
+
+  /* Labels near the map controls fade out (maps.ts), as do types listed in revealOnZoom */
+  .ml--zoom {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .maps__route,
+  .maps__route-casing {
     fill: none;
-    stroke: var(--color-maps-route);
-    stroke-width: 5;
-    stroke-dasharray: 2 16;
     stroke-linecap: round;
+    stroke-linejoin: round;
   }
+  .maps__route-casing { stroke: var(--color-maps-route-casing); stroke-width: calc(18px * var(--route-k)); }
+  .maps__route { stroke: var(--color-maps-route); stroke-width: calc(12px * var(--route-k)); }
 
-  .maps__route-mask {
-    fill: none;
-    stroke: var(--white);
-    stroke-width: 24;
-  }
-
-  .maps__route-guide {
-    fill: none;
-    stroke: none;
-  }
-
+  /* Pins: round marker + small tail, glyph by type; the selected one grows (maps.ts) */
   .maps__pin {
     cursor: pointer;
   }
@@ -607,41 +811,108 @@ const types = [...new Set(entries.map((e) => e.data.type))];
   .maps__pin-shape {
     fill: var(--color-maps-pin);
     stroke: var(--color-maps-pin-ring);
-    stroke-width: 3;
-    filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.25));
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    filter: var(--shadow-map-pin);
   }
 
-  .maps__pin--here .maps__pin-shape { fill: var(--color-maps-pin-here); }
-  .maps__pin-dot { fill: var(--color-maps-pin-ring); }
+  .maps__pin-glyph { fill: none; stroke: var(--color-maps-pin-glyph); stroke-width: 1.6px; stroke-linecap: round; stroke-linejoin: round; }
   .maps__pin.is-dim .maps__pin-shape { fill: var(--color-maps-pin-dim); }
-  .maps__pin.is-dim .maps__label { opacity: 0.45; }
+  .maps__pin.is-dim .maps__pin-label { opacity: 0.45; }
+  .maps__pin.is-highlighted .maps__pin-shape { stroke: var(--color-maps-route); }
 
-  .maps__pin.is-selected .maps__pin-shape,
-  .maps__pin.is-highlighted .maps__pin-shape {
+  /* "You are here": blue dot, white ring, soft pulsing halo (maps.ts; still with reduced motion) */
+  .maps__puck-halo { fill: var(--color-maps-marker); opacity: 0.22; }
+  .maps__puck-ring { fill: var(--color-maps-marker-ring); filter: var(--shadow-map-pin); }
+  .maps__puck-dot { fill: var(--color-maps-marker); }
+
+  .maps__pin-city { fill: var(--color-map-label-stop); font-weight: 700; }
+  .maps__pin-dates { fill: var(--color-map-label-stop-meta); font-weight: 500; }
+
+  .maps__marker-halo { fill: var(--color-maps-marker); opacity: 0.2; }
+  .maps__marker-dot { fill: var(--color-maps-marker); stroke: var(--color-maps-marker-ring); stroke-width: 4.5px; filter: var(--shadow-map-pin); }
+
+  /* Zoom / compass / recenter, top right like Apple Maps */
+  .maps__tools {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .maps__tool-group {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: var(--border-thin) solid var(--color-map-control-border);
+    border-radius: var(--radius-md);
+    background: var(--color-map-control-bg);
+    box-shadow: var(--shadow-map-control);
+  }
+
+  .maps__tool {
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    border: 0;
+    background: var(--color-map-control-bg);
+    color: var(--color-map-control-text);
+    cursor: pointer;
+  }
+
+  .maps__tool-group .maps__tool + .maps__tool {
+    border-top: var(--border-thin) solid var(--color-map-control-divider);
+  }
+
+  .maps__tool--round {
+    border: var(--border-thin) solid var(--color-map-control-border);
+    border-radius: 50%;
+    box-shadow: var(--shadow-map-control);
+  }
+
+  .maps__tool:focus-visible {
+    outline: 2px solid var(--color-maps-route);
+    outline-offset: 2px;
+  }
+
+  .maps__tool svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .maps__compass svg {
+    width: 26px;
+    height: 26px;
+    stroke: none;
+  }
+
+  .maps__compass-rose {
+    transform-origin: 16px 16px;
+  }
+
+  .maps__compass-north { fill: var(--color-map-compass-north); }
+  .maps__compass-south { fill: currentColor; opacity: 0.35; }
+  .maps__compass text {
+    fill: currentColor;
+    font: 700 11px var(--font-system);
+  }
+
+  .maps__recenter-arrow {
+    fill: var(--color-maps-route);
     stroke: var(--color-maps-route);
-    stroke-width: 4;
+    stroke-width: 1;
   }
-
-  .maps__label-city {
-    fill: var(--color-maps-label);
-    font: 700 22px var(--font-system);
-    paint-order: stroke;
-    stroke: var(--color-maps-label-bg);
-    stroke-width: 6px;
-    stroke-linejoin: round;
-  }
-
-  .maps__label-caption {
-    fill: var(--color-text-muted);
-    font: 500 17px var(--font-system);
-    paint-order: stroke;
-    stroke: var(--color-maps-label-bg);
-    stroke-width: 5px;
-    stroke-linejoin: round;
-  }
-
-  .maps__marker-halo { fill: var(--color-maps-marker); opacity: 0.22; }
-  .maps__marker-dot { fill: var(--color-maps-marker); stroke: var(--white); stroke-width: 4; }
 
   .maps__controls {
     position: absolute;
@@ -658,11 +929,11 @@ const types = [...new Set(entries.map((e) => e.data.type))];
     width: 2.1rem;
     height: 2.1rem;
     padding: 0;
-    border: var(--border-thin) solid var(--color-chip-border);
+    border: var(--border-thin) solid var(--color-map-control-border);
     border-radius: var(--radius-md);
-    background: var(--color-maps-card);
-    box-shadow: var(--shadow-paper);
-    color: var(--color-text);
+    background: var(--color-map-control-bg);
+    box-shadow: var(--shadow-map-control);
+    color: var(--color-map-control-text);
     cursor: pointer;
   }
 

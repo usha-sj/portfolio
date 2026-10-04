@@ -2,8 +2,10 @@
 // The Maps app's route: one stop per chapter, in order. Experience entries join a stop via
 // their `stop` field (src/content/experience/*.md).
 //
-// x / y: where the pin sits on the map canvas (mapSize below), in canvas pixels.
-// The route is a left-to-right zigzag through the stops.
+// Positions are generated: stops sit near the river at uneven spacing and distances, sometimes
+// switching banks (src/lib/mapgen.ts, run at build time). The route between them follows the
+// generated roads. To pin a stop somewhere specific, give it
+// `x` / `y` (map units, see mapSize). Change `seed` to try a different map.
 
 export type StepKind = 'start' | 'arrive' | 'here';
 
@@ -13,33 +15,35 @@ export interface Stop {
   city: string;
   country: string;
   dates: string;
-  caption: string;
   // Shown on the place card when the stop has no entries (e.g. "You are here")
   note?: string;
-  x: number;
-  y: number;
+  // Pin glyph. Defaults to the most common type among the stop's entries; set to override.
+  glyph?: 'work' | 'research' | 'education' | 'leadership';
+  // Optional manual position override (map units)
+  x?: number;
+  y?: number;
 }
 
-export const mapSize = { width: 2300, height: 1000 };
-// How large the map is drawn (1 = canvas pixels). Smaller shows more stops at once.
-export const mapScale = 0.62;
+// Any whole number. The same seed always draws the same map.
+export const seed = 1; // picked for a gentle route (1.18× the straight-line distance), uneven spacing, mixed banks
+
+export const mapSize = { width: 2800, height: 1400 };
+// How large the map is drawn at zoom 1 (1 = map units as pixels).
+export const mapScale = 0.55;
 
 export const stops: Stop[] = [
-  { id: 'phnom-penh', step: 'start', city: 'Phnom Penh', country: 'Cambodia', dates: '2020 – 2022', caption: 'where it started', x: 220, y: 640 },
-  { id: 'toronto-start', step: 'arrive', city: 'Toronto', country: 'Canada', dates: '2022 – 2024', caption: 'politics & econ', x: 540, y: 360 },
-  { id: 'toronto-cs', step: 'arrive', city: 'Toronto', country: 'Canada', dates: '2024 – 2025', caption: 'switching to CS', x: 860, y: 660 },
-  { id: 'montreal', step: 'arrive', city: 'Montreal', country: 'Canada', dates: 'Summer 2025', caption: 'first SWE internship', x: 1180, y: 350 },
-  { id: 'helsinki', step: 'arrive', city: 'Helsinki', country: 'Finland', dates: 'Fall 2025', caption: 'exchange semester', x: 1500, y: 620 },
-  { id: 'toronto-2026', step: 'arrive', city: 'Toronto', country: 'Canada', dates: 'Winter 2026', caption: 'shipping things', x: 1820, y: 330 },
+  { id: 'phnom-penh', step: 'start', city: 'Phnom Penh', country: 'Cambodia', dates: '2020 – 2022' },
+  { id: 'toronto-start', step: 'arrive', city: 'Toronto', country: 'Canada', dates: '2022 – 2024' },
+  { id: 'toronto-cs', step: 'arrive', city: 'Toronto', country: 'Canada', dates: '2024 – 2025' },
+  { id: 'montreal', step: 'arrive', city: 'Montreal', country: 'Canada', dates: 'Summer 2025' },
+  { id: 'helsinki', step: 'arrive', city: 'Helsinki', country: 'Finland', dates: 'Fall 2025' },
+  { id: 'toronto-2026', step: 'arrive', city: 'Toronto', country: 'Canada', dates: 'Winter 2026' },
   {
     id: 'here',
     step: 'here',
     city: 'You are here',
     country: '',
     dates: 'Jan 2027 →',
-    caption: 'what’s next',
     note: 'Finishing my degree in January 2027 and looking for full-time software engineering, ML and product roles. Mail is in the dock if you’d like to say hi.',
-    x: 2100,
-    y: 600,
   },
 ];

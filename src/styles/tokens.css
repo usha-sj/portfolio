@@ -277,21 +277,54 @@
 
   /* ---- Maps app (Experience) ---- */
   --color-maps-sidebar: var(--oat-50);
-  --color-maps-paper: var(--oat-150); /* map paper, a touch warmer than the notes paper */
-  --color-maps-grid: rgb(91 108 143 / 0.08);
-  --maps-grid: repeating-linear-gradient(0deg, transparent 0 79px, var(--color-maps-grid) 79px 80px),
-    repeating-linear-gradient(90deg, transparent 0 79px, var(--color-maps-grid) 79px 80px);
-  --color-maps-contour: rgb(91 108 143 / 0.16);
-  --color-maps-water: rgb(147 166 207 / 0.28);
-  --color-maps-route: var(--ink-700);
-  --color-maps-pin: var(--burgundy-500);
-  --color-maps-pin-here: var(--ink-700);
-  --color-maps-pin-dim: var(--neutral-400);
-  --color-maps-pin-ring: var(--white);
-  --color-maps-label: var(--ink-900);
-  --color-maps-label-bg: rgb(250 246 238 / 0.85);
-  --color-maps-marker: var(--ink-500);
-  --color-maps-highlight: var(--burgundy-100);
+  /* Map (Apple Maps light; dark values in the prefers-color-scheme block at the end).
+     Land, parks, water and roads are kept close in brightness so the route and labels pop. */
+  --color-map-land: #f3f1ec;
+  --color-map-residential: #f7f6f2;
+  --color-map-commercial: #f1ebf2;
+  --color-map-water: #a8c8e6;
+  --color-map-water-edge: #bad4ec;
+  --color-map-park: #d3e6c8;
+  --color-map-street: #ffffff;
+  --color-map-road: #ffffff;
+  --color-map-road-casing: #dcd6cc;
+  --color-map-highway: #fbe3a0;
+  --color-map-highway-casing: #e6c674;
+  --color-map-bridge-outline: #c9c2b6;
+  --color-map-bridge-shadow: rgb(0 0 0 / 0.12);
+  --color-map-shield-bg: #ffffff;
+  --color-map-shield-border: #bdb6aa;
+  --color-map-shield-text: #3a3a3c;
+  --color-maps-route: #0a7aff;
+  --color-maps-route-casing: #0759c9;
+  --color-maps-pin: #ff3b30;
+  --color-maps-pin-dim: #aeaeb2;
+  --color-maps-pin-ring: #ffffff;
+  --color-maps-pin-glyph: #ffffff;
+  --color-maps-marker: #0a84ff;
+  --color-maps-marker-ring: #ffffff;
+  --color-map-halo: rgb(243 241 236 / 0.92);
+  --color-map-label-stop: #1c1c1e;
+  --color-map-label-stop-meta: #6c6c70;
+  --color-map-label-neighbourhood: #85807a;
+  --color-map-label-street: #6e6b66;
+  --color-map-label-road: #55524d;
+  --color-map-label-water: #4a77a8;
+  --color-poi-park: #2f9e4f;
+  --color-poi-sports: #1f9d8f;
+  --color-poi-school: #9a7650;
+  --color-poi-cafe: #e8820c;
+  --color-poi-food: #e8820c;
+  --color-poi-spa: #a24fd0;
+  --color-poi-landmark: #e5304f;
+  --color-poi-glyph: #ffffff;
+  --color-map-control-bg: #ffffff;
+  --color-map-control-text: #1c1c1e;
+  --color-map-control-border: rgb(0 0 0 / 0.1);
+  --color-map-control-divider: rgb(0 0 0 / 0.12);
+  --color-map-compass-north: #ff3b30;
+  --shadow-map-control: 0 1px 3px rgb(0 0 0 / 0.16), 0 4px 10px rgb(0 0 0 / 0.08);
+  --shadow-map-pin: drop-shadow(0 2px 2.5px rgb(0 0 0 / 0.3));
   --color-maps-card: var(--white); /* solid: no backdrop blur on the map (Safari layering) */
   --color-maps-step: var(--ink-500);
   --shadow-maps-card: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 12px 32px rgb(40 30 20 / 0.18);
@@ -407,4 +440,53 @@
   --z-menubar: 100;
   --z-menu: 110;
   --z-loader: 9999;
+}
+
+/* Map dark mode: follows the OS setting (only the map is themed for now). Tuned to Apple Maps
+   dark: muted slate land, desaturated green parks, deep muted navy water, light highways. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-map-land: #30343f;
+    --color-map-residential: #343844;
+    --color-map-commercial: #393447;
+    --color-map-water: #232c4a;
+    --color-map-water-edge: #2b3556;
+    --color-map-park: #263f37;
+    --color-map-street: #40444f;
+    --color-map-road: #555a68;
+    --color-map-road-casing: #30343f;
+    --color-map-highway: #7d8597;
+    --color-map-highway-casing: #555a68;
+    --color-map-bridge-outline: #6a7080;
+    --color-map-bridge-shadow: rgb(0 0 0 / 0.35);
+    --color-map-shield-bg: #c9ccd4;
+    --color-map-shield-border: #8a8f9c;
+    --color-map-shield-text: #23262e;
+    --color-maps-route: #0a84ff;
+    --color-maps-route-casing: #0050b5;
+    --color-maps-pin: #ff453a;
+    --color-maps-pin-dim: #636366;
+    --color-maps-pin-ring: #ffffff;
+    --color-map-halo: rgb(48 52 63 / 0.92);
+    --color-map-label-stop: #f2f2f7;
+    --color-map-label-stop-meta: #b4b9c6;
+    --color-map-label-neighbourhood: #c7cbd5;
+    --color-map-label-street: #9da3b1;
+    --color-map-label-road: #bcc1cc;
+    --color-map-label-water: #7f93cf;
+    --color-poi-park: #4cc472;
+    --color-poi-sports: #3ec2b2;
+    --color-poi-school: #c3a07a;
+    --color-poi-cafe: #ff9f0a;
+    --color-poi-food: #ff9f0a;
+    --color-poi-spa: #c77dee;
+    --color-poi-landmark: #ff5c76;
+    --color-poi-glyph: #1c1c1e;
+    --color-map-control-bg: #2c2c2e;
+    --color-map-control-text: #f2f2f7;
+    --color-map-control-border: rgb(255 255 255 / 0.1);
+    --color-map-control-divider: rgb(255 255 255 / 0.14);
+    --color-map-compass-north: #ff453a;
+    --shadow-map-control: 0 1px 3px rgb(0 0 0 / 0.5), 0 4px 10px rgb(0 0 0 / 0.3);
+  }
 }

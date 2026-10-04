@@ -45,6 +45,14 @@ export const mapsConfig = {
   mapLabel: 'Map of my route',
   previousStop: 'Previous stop',
   nextStop: 'Next stop',
+  // Label types that only appear once you zoom in (e.g. ['street']). Empty = all names show
+  // at the default zoom.
+  revealOnZoom: [] as ('neighbourhood' | 'street' | 'road' | 'park' | 'water')[],
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  compass: 'Face north (Shift + ← / → rotates the map)',
+  recenter: 'Recenter on the selected stop',
+  compassNorth: 'N',
   sheetHandle: 'Drag to resize the directions panel',
   present: 'Present',
 };
